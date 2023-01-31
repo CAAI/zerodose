@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "zerodose"
-version = "1.0.0"
+version = "0.0.0"
 description = "Zerodose"
 authors = ["Christian Hinge <christian.hinge@regionh.dk>"]
 license = "MIT"
