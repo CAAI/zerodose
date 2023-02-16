@@ -4,11 +4,9 @@
 [![Status](https://img.shields.io/pypi/status/zerodose.svg)][status]
 [![Python Version](https://img.shields.io/pypi/pyversions/zerodose)][python version]
 [![License](https://img.shields.io/pypi/l/zerodose)][license]
-
 [![Read the documentation at https://zerodose.readthedocs.io/](https://img.shields.io/readthedocs/zerodose/latest.svg?label=Read%20the%20Docs)][read the docs]
 [![Tests](https://github.com/ChristianHinge/zerodose/workflows/Tests/badge.svg)][tests]
 [![Codecov](https://codecov.io/gh/ChristianHinge/zerodose/branch/main/graph/badge.svg)][codecov]
-
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)][pre-commit]
 [![Black](https://img.shields.io/badge/code%20style-black-000000.svg)][black]
 

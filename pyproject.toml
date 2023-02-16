@@ -18,6 +18,9 @@ Changelog = "https://github.com/ChristianHinge/zerodose/releases"
 [tool.poetry.dependencies]
 python = ">=3.7, <3.11"
 click = ">=8.0.1"
+python-dotenv = "^0.21.1"
+torch = "^1.13.1"
+torchio = "^0.18.87"
 
 [tool.poetry.dev-dependencies]
 Pygments = ">=2.10.0"
