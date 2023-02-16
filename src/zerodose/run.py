@@ -102,7 +102,6 @@ def synthesize_baselines(
     model = _get_model()
     model = model.to(device)
     model.eval()
-
     patch_size = (32, 192, 192)
     patch_overlap = tuple(_size - stride for _size in patch_size)
 

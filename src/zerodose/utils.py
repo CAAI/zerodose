@@ -11,6 +11,20 @@ def get_model_fname():
     return os.path.join(folder_with_parameter_files, "model_1.pt")
 
 
+def _download_file(url, filename):
+
+    # NOTE the stream=True parameter below
+    with requests.get(url, stream=True) as r:
+        r.raise_for_status()
+        with open(filename, "wb") as f:
+            for chunk in r.iter_content(chunk_size=8192):
+                # If you have chunk encoded response uncomment if
+                # and set chunk_size parameter to None.
+                # if chunk:
+                f.write(chunk)
+    return filename
+
+
 def maybe_download_parameters(force_overwrite=False):
     """Downloads the parameters for some fold if it is not present yet.
 
@@ -30,10 +44,7 @@ def maybe_download_parameters(force_overwrite=False):
     if not os.path.isfile(out_filename):
         url = "http://sandbox.zenodo.org/record/1165160/files/gen2.pt?download=1"
         print("Downloading", url, "...")
-        data = requests.get(url)
-
-        with open(out_filename, "wb") as f:
-            f.write(data)
+        _download_file(url, out_filename)
 
 
 def maybe_mkdir_p(directory):
