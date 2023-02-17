@@ -3,15 +3,12 @@ import torch
 import torch.nn as nn
 
 
-# Create a function to iterate and print 100 numbers with full docstring
-
-
 class ConvBlock(nn.Module):
     """Convolutional block."""
 
-    def __init__(self, ch_i, ch_o, dropout=0):
+    def __init__(self, ch_i, ch_o, dropout=0) -> None:
         """Initialize the block."""
-        self.sequence = []
+        self.sequence: list[nn.Module] = []
         super().__init__()
 
         for _i in range(2):
@@ -24,7 +21,7 @@ class ConvBlock(nn.Module):
             ch_i = ch_o
         self.model = nn.Sequential(*self.sequence)
 
-    def forward(self, x):
+    def forward(self, x) -> torch.Tensor:
         """Forward pass of the block."""
         return self.model(x)
 
@@ -32,7 +29,7 @@ class ConvBlock(nn.Module):
 class UpConv(nn.Module):
     """Upsampling convolutional block."""
 
-    def __init__(self, ch_i, ch_o, output_pad=0):
+    def __init__(self, ch_i, ch_o) -> None:
         """Initialize the block."""
         self.sequence = []
         super().__init__()
@@ -47,7 +44,7 @@ class UpConv(nn.Module):
 
         self.model = nn.Sequential(*self.sequence)
 
-    def forward(self, x, skip):
+    def forward(self, x, skip) -> torch.Tensor:
         """Forward pass of the block."""
         a = self.model(x)
 
@@ -57,7 +54,7 @@ class UpConv(nn.Module):
 class DownConv(nn.Module):
     """Downsampling convolutional block."""
 
-    def __init__(self, ch_i, ch_o):
+    def __init__(self, ch_i, ch_o) -> None:
         """Initialize the block."""
         self.sequence = []
         super().__init__()
@@ -66,7 +63,7 @@ class DownConv(nn.Module):
         self.sequence += [nn.LeakyReLU(0.2, True)]
         self.model = nn.Sequential(*self.sequence)
 
-    def forward(self, x):
+    def forward(self, x) -> torch.Tensor:
         """Forward pass of the block."""
         return self.model(x)
 
@@ -74,7 +71,7 @@ class DownConv(nn.Module):
 class UNet3D(nn.Module):
     """3D U-Net model for PET reconstruction."""
 
-    def __init__(self, refiner=False, do=False):
+    def __init__(self, refiner=False, do=False) -> None:
         """Initialize the model."""
         super().__init__()
 
@@ -114,7 +111,7 @@ class UNet3D(nn.Module):
         self.last = nn.Conv3d(32, 1, padding=1, kernel_size=3)  # 32, 196, 196
         self.last_sigmoid = nn.Sigmoid()  # 32, 196, 196
 
-    def forward(self, x):
+    def forward(self, x) -> torch.Tensor:
         """Forward pass of the model."""
         # Going down
         c1 = self.conv_d1(x)
@@ -145,11 +142,11 @@ class UNet3D(nn.Module):
 class DummyGenerator(nn.Module):
     """Dummy generator for testing purposes."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         """Initialize the generator."""
         super().__init__()
         self.w = nn.Parameter(torch.tensor(1.0))
 
-    def forward(self, x):
+    def forward(self, x) -> torch.Tensor:
         """Forward pass of the generator."""
         return self.w * x
