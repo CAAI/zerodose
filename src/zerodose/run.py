@@ -29,8 +29,8 @@ def _infer_single_subject(
     """Infer a single subject."""
     grid_sampler = GridSampler(subject, ps, po)
     patch_loader = DataLoader(
-        grid_sampler, batch_size=bs, num_workers=4
-    )  # type: ignore
+        grid_sampler, batch_size=bs, num_workers=4  # type: ignore
+    )
     aggregator = GridAggregator(grid_sampler, overlap_mode="average")
     aggregator_weight = GridAggregator(grid_sampler, overlap_mode="average")
     weight = utils.get_gaussian_weight(ps, std).to(device)
