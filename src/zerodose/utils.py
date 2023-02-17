@@ -1,5 +1,7 @@
 """Utility functions."""
 import os
+from typing import List
+from typing import Tuple
 from typing import Union
 from urllib.request import urlopen
 
@@ -54,7 +56,7 @@ def maybe_mkdir_p(directory: str) -> None:
 
 
 def get_gaussian_weight(
-    ps: Union[list[int], tuple[int, int, int]], std: Union[float, int]
+    ps: Union[List[int], Tuple[int, int, int]], std: Union[float, int]
 ) -> torch.Tensor:
     """Returns a gaussian weight for the given patch size and standard deviation."""
     n_slices = ps[0]

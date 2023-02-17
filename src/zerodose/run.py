@@ -2,6 +2,7 @@
 
 
 from typing import Iterable
+from typing import Tuple
 from typing import Union
 
 import torch
@@ -19,8 +20,8 @@ from zerodose.model import ZeroDose
 def _infer_single_subject(
     model: ZeroDose,
     subject: tio.Subject,
-    ps: tuple[int, int, int],
-    po: tuple[int, int, int],
+    ps: Tuple[int, int, int],
+    po: Tuple[int, int, int],
     bs: int,
     std: Union[float, int],
     device: Union[torch.device, str],

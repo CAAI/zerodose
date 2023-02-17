@@ -1,4 +1,6 @@
 """Networks for ZeroDose."""
+from typing import List
+
 import torch
 import torch.nn as nn
 
@@ -8,7 +10,7 @@ class ConvBlock(nn.Module):
 
     def __init__(self, ch_i: int, ch_o: int, dropout: float = 0) -> None:
         """Initialize the block."""
-        self.sequence: list[nn.Module] = []
+        self.sequence: List[nn.Module] = []
         super().__init__()
 
         for _i in range(2):
@@ -31,7 +33,7 @@ class UpConv(nn.Module):
 
     def __init__(self, ch_i: int, ch_o: int) -> None:
         """Initialize the block."""
-        self.sequence: list[nn.Module] = []
+        self.sequence: List[nn.Module] = []
         super().__init__()
 
         self.sequence += [
@@ -56,7 +58,7 @@ class DownConv(nn.Module):
 
     def __init__(self, ch_i: int, ch_o: int) -> None:
         """Initialize the block."""
-        self.sequence: list[nn.Module] = []
+        self.sequence: List[nn.Module] = []
         super().__init__()
         self.sequence += [nn.Conv3d(ch_i, ch_o, stride=2, padding=1, kernel_size=3)]
         self.sequence += [nn.BatchNorm3d(ch_o)]
