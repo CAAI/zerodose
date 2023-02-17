@@ -1,8 +1,10 @@
 """Functions called by the CLI."""
 
-import os
 
-import nibabel as nib
+from typing import Iterable
+from typing import Tuple
+from typing import Union
+
 import torch
 import torchio as tio
 from torch.utils.data import DataLoader
@@ -15,28 +17,23 @@ from zerodose.dataset import SubjectDataset
 from zerodose.model import ZeroDose
 
 
-def _get_gaussian_weight(ps, std):
-    n_slices = ps[0]
-    gaussian_vec = (
-        1
-        / torch.sqrt(torch.tensor(std) * torch.pi)
-        * torch.exp(
-            -0.5 * (torch.square(torch.arange(n_slices) + 0.5 - n_slices / 2.0) / std)
-        )
-    )
-    gaussian_vec = gaussian_vec.unsqueeze(1).unsqueeze(1)
-    weight = torch.ones(ps)
-    weight *= gaussian_vec
-    return weight.unsqueeze(0).unsqueeze(0)
-
-
-def _infer_single_subject(model, subject, ps, po, bs, std, device):
+def _infer_single_subject(
+    model: ZeroDose,
+    subject: tio.Subject,
+    ps: Tuple[int, int, int],
+    po: Tuple[int, int, int],
+    bs: int,
+    std: Union[float, int],
+    device: Union[torch.device, str],
+) -> torch.Tensor:
     """Infer a single subject."""
     grid_sampler = GridSampler(subject, ps, po)
-    patch_loader = DataLoader(grid_sampler, batch_size=bs, num_workers=4)
+    patch_loader = DataLoader(
+        grid_sampler, batch_size=bs, num_workers=4  # type: ignore
+    )
     aggregator = GridAggregator(grid_sampler, overlap_mode="average")
     aggregator_weight = GridAggregator(grid_sampler, overlap_mode="average")
-    weight = _get_gaussian_weight(ps, std).to(device)
+    weight = utils.get_gaussian_weight(ps, std).to(device)
     with torch.no_grad():
         for patches_batch in patch_loader:
             patch_x = patches_batch["mr"][tio.DATA].to(device=device)
@@ -51,37 +48,17 @@ def _infer_single_subject(model, subject, ps, po, bs, std, device):
     )
 
 
-def _save_nifty(data, filename_out, affine_ref):
-    save_directory = os.path.dirname(filename_out)
-    if not os.path.exists(save_directory):
-        os.makedirs(save_directory)
-
-    func = nib.load(affine_ref).affine
-    data = data.squeeze().cpu().detach().numpy()
-    ni_img = nib.Nifti1Image(data, func)
-    nib.save(ni_img, filename_out)
-
-
-def _get_model():
-    model = ZeroDose()
-    utils.maybe_download_parameters()
-    weights_path = utils.get_model_fname()
-    model.generator.load_state_dict(torch.load(weights_path))
-    return model
-
-
 def synthesize_baselines(
-    mri_fnames,
-    mask_fnames,
-    out_fnames,
-    device="cuda",
-    overwrite=True,
-    sd_weight=5,
-    verbose=True,
-    batch_size=1,
-    stride=2,
-    save_output=True,
-):
+    mri_fnames: Iterable[str],
+    mask_fnames: Iterable[str],
+    out_fnames: Iterable[str],
+    device: Union[torch.device, str] = "cuda:0",
+    sd_weight: Union[float, int] = 5,
+    verbose: bool = True,
+    batch_size: int = 1,
+    stride: int = 2,
+    save_output: bool = True,
+) -> None:
     """Synthesize baseline PET images from MRI images."""
     if not isinstance(mri_fnames, list):
         mri_fnames = list(mri_fnames)
@@ -99,13 +76,13 @@ def synthesize_baselines(
         )
 
     dataset = SubjectDataset(mri_fnames, mask_fnames, out_fnames)
-    model = _get_model()
+    model = utils.get_model()
     model = model.to(device)
     model.eval()
     patch_size = (32, 192, 192)
-    patch_overlap = tuple(_size - stride for _size in patch_size)
+    patch_overlap = (32 - stride, 192 - stride, 192 - stride)
 
-    for sub in dataset:
+    for sub in dataset:  # type: ignore
         if verbose:
             print(f"Synthesizing sbPET for {sub.mr.path}")
 
@@ -114,10 +91,10 @@ def synthesize_baselines(
         )
 
         sbpet = sbpet.cpu().data * sub.mask.data
-        sbpet = processing._postprocess(sbpet)
+        sbpet = processing.postprocess(sbpet)
 
         if save_output:
             if verbose:
                 print(f"Saving to {sub.out_fname}")
 
-            _save_nifty(sbpet, sub.out_fname, affine_ref=sub.mr.path)
+            utils.save_nifty(sbpet, sub.out_fname, affine_ref=sub.mr.path)

@@ -1,5 +1,7 @@
 """Command-line interface."""
 import re
+from typing import Iterable
+from typing import Union
 
 import click
 
@@ -32,7 +34,11 @@ def main() -> None:
     multiple=True,
 )
 @click.option("-o", "--out", "out_fnames", type=click.Path(), multiple=True)
-def syn(mri_fnames, mask_fnames, out_fnames=None) -> None:
+def syn(
+    mri_fnames: Iterable[str],
+    mask_fnames: Iterable[str],
+    out_fnames: Union[Iterable[str], None] = None,
+) -> None:
     """Synthesize baseline PET images."""
     if out_fnames is None:
         out_fnames = [_create_output_fname(mri_fname) for mri_fname in mri_fnames]

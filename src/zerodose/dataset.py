@@ -1,4 +1,7 @@
 """Dataset class for the ZeroDose project."""
+from typing import Any
+from typing import Dict
+
 import torchio as tio
 
 from zerodose.processing import Pad
@@ -20,8 +23,8 @@ class SubjectDataset(tio.data.SubjectsDataset):
 
         super().__init__(subjects, transforms)
 
-    def _make_subject_dict(self, mr_path, mask_path):
-        subject_dict = {}
+    def _make_subject_dict(self, mr_path, mask_path) -> dict:
+        subject_dict: Dict[Any, Any] = {}
         mri = mr_path
         mask = mask_path
 
@@ -30,13 +33,13 @@ class SubjectDataset(tio.data.SubjectsDataset):
 
         return subject_dict
 
-    def _make_subject_predict(self, mr_path, mask_path, out_fname):
+    def _make_subject_predict(self, mr_path, mask_path, out_fname) -> tio.Subject:
         subject_dict = self._make_subject_dict(mr_path, mask_path)
         subject_dict["out_fname"] = out_fname
 
         return tio.Subject(subject_dict)
 
-    def _get_augmentation_transform_val(self):
+    def _get_augmentation_transform_val(self) -> tio.Compose:
         return tio.Compose(
             [
                 tio.transforms.ZNormalization(include=["mr"], masking_method="mask"),
