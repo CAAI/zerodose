@@ -1,4 +1,6 @@
 """Dataset class for the ZeroDose project."""
+from typing import Any
+
 import torchio as tio
 
 from zerodose.processing import Pad
@@ -21,7 +23,7 @@ class SubjectDataset(tio.data.SubjectsDataset):
         super().__init__(subjects, transforms)
 
     def _make_subject_dict(self, mr_path, mask_path) -> dict:
-        subject_dict = {}
+        subject_dict: dict[Any, Any] = {}
         mri = mr_path
         mask = mask_path
 
