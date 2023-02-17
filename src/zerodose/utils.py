@@ -1,8 +1,11 @@
 """Utility functions."""
 import os
 
+import nibabel as nib
 import requests
+import torch
 
+from zerodose.model import ZeroDose
 from zerodose.paths import folder_with_parameter_files
 
 
@@ -53,3 +56,37 @@ def maybe_mkdir_p(directory):
     for i in range(0, len(splits)):
         if not os.path.isdir(os.path.join("/", *splits[: i + 1])):
             os.mkdir(os.path.join("/", *splits[: i + 1]))
+
+
+def _get_gaussian_weight(ps, std):
+    n_slices = ps[0]
+    gaussian_vec = (
+        1
+        / torch.sqrt(torch.tensor(std) * torch.pi)
+        * torch.exp(
+            -0.5 * (torch.square(torch.arange(n_slices) + 0.5 - n_slices / 2.0) / std)
+        )
+    )
+    gaussian_vec = gaussian_vec.unsqueeze(1).unsqueeze(1)
+    weight = torch.ones(ps)
+    weight *= gaussian_vec
+    return weight.unsqueeze(0).unsqueeze(0)
+
+
+def _save_nifty(data, filename_out, affine_ref):
+    save_directory = os.path.dirname(filename_out)
+    if not os.path.exists(save_directory):
+        os.makedirs(save_directory)
+
+    func = nib.load(affine_ref).affine
+    data = data.squeeze().cpu().detach().numpy()
+    ni_img = nib.Nifti1Image(data, func)
+    nib.save(ni_img, filename_out)
+
+
+def _get_model():
+    model = ZeroDose()
+    maybe_download_parameters()
+    weights_path = get_model_fname()
+    model.generator.load_state_dict(torch.load(weights_path))
+    return model

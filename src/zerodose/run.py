@@ -1,8 +1,6 @@
 """Functions called by the CLI."""
 
-import os
 
-import nibabel as nib
 import torch
 import torchio as tio
 from torch.utils.data import DataLoader
@@ -12,22 +10,6 @@ from torchio.data import GridSampler
 from zerodose import processing
 from zerodose import utils
 from zerodose.dataset import SubjectDataset
-from zerodose.model import ZeroDose
-
-
-def _get_gaussian_weight(ps, std):
-    n_slices = ps[0]
-    gaussian_vec = (
-        1
-        / torch.sqrt(torch.tensor(std) * torch.pi)
-        * torch.exp(
-            -0.5 * (torch.square(torch.arange(n_slices) + 0.5 - n_slices / 2.0) / std)
-        )
-    )
-    gaussian_vec = gaussian_vec.unsqueeze(1).unsqueeze(1)
-    weight = torch.ones(ps)
-    weight *= gaussian_vec
-    return weight.unsqueeze(0).unsqueeze(0)
 
 
 def _infer_single_subject(model, subject, ps, po, bs, std, device):
@@ -36,7 +18,7 @@ def _infer_single_subject(model, subject, ps, po, bs, std, device):
     patch_loader = DataLoader(grid_sampler, batch_size=bs, num_workers=4)
     aggregator = GridAggregator(grid_sampler, overlap_mode="average")
     aggregator_weight = GridAggregator(grid_sampler, overlap_mode="average")
-    weight = _get_gaussian_weight(ps, std).to(device)
+    weight = utils._get_gaussian_weight(ps, std).to(device)
     with torch.no_grad():
         for patches_batch in patch_loader:
             patch_x = patches_batch["mr"][tio.DATA].to(device=device)
@@ -49,25 +31,6 @@ def _infer_single_subject(model, subject, ps, po, bs, std, device):
         aggregator.get_output_tensor().detach()
         / aggregator_weight.get_output_tensor().detach()
     )
-
-
-def _save_nifty(data, filename_out, affine_ref):
-    save_directory = os.path.dirname(filename_out)
-    if not os.path.exists(save_directory):
-        os.makedirs(save_directory)
-
-    func = nib.load(affine_ref).affine
-    data = data.squeeze().cpu().detach().numpy()
-    ni_img = nib.Nifti1Image(data, func)
-    nib.save(ni_img, filename_out)
-
-
-def _get_model():
-    model = ZeroDose()
-    utils.maybe_download_parameters()
-    weights_path = utils.get_model_fname()
-    model.generator.load_state_dict(torch.load(weights_path))
-    return model
 
 
 def synthesize_baselines(
@@ -99,7 +62,7 @@ def synthesize_baselines(
         )
 
     dataset = SubjectDataset(mri_fnames, mask_fnames, out_fnames)
-    model = _get_model()
+    model = utils._get_model()
     model = model.to(device)
     model.eval()
     patch_size = (32, 192, 192)
@@ -120,4 +83,4 @@ def synthesize_baselines(
             if verbose:
                 print(f"Saving to {sub.out_fname}")
 
-            _save_nifty(sbpet, sub.out_fname, affine_ref=sub.mr.path)
+            utils._save_nifty(sbpet, sub.out_fname, affine_ref=sub.mr.path)
