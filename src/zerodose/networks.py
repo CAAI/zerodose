@@ -73,15 +73,11 @@ class DownConv(nn.Module):
 class UNet3D(nn.Module):
     """3D U-Net model for PET reconstruction."""
 
-    def __init__(self, refiner: bool = False, use_dropout: bool = False) -> None:
+    def __init__(self, use_dropout: bool = False) -> None:
         """Initialize the model."""
         super().__init__()
 
-        # Going Down
-        if refiner:
-            self.conv_d1 = ConvBlock(2, 32, dropout=0.1 * use_dropout)  # 32, 196, 196
-        else:
-            self.conv_d1 = ConvBlock(1, 32, dropout=0.1 * use_dropout)  # 32, 196, 196
+        self.conv_d1 = ConvBlock(1, 32, dropout=0.1 * use_dropout)  # 32, 196, 196
 
         self.down_1 = DownConv(32, 128)  # 16, 48, 48
 
