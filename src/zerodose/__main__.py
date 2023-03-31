@@ -5,8 +5,8 @@ from typing import Union
 
 import click
 
-from zerodose.run_synthesize import synthesize_baselines
 from zerodose.run_abnormality import create_abnormality_maps
+from zerodose.run_synthesize import synthesize_baselines
 
 
 @click.group()
@@ -36,11 +36,7 @@ mask_option = click.option(
 )
 
 sbpet_output_option = click.option(
-    "-o", 
-    "--out", 
-    "out_fnames", 
-    type=click.Path(), 
-    multiple=True
+    "-o", "--out", "out_fnames", type=click.Path(), multiple=True
 )
 
 verbose_option = click.option(
@@ -57,17 +53,20 @@ verbose_option = click.option(
 @mri_option
 @mask_option
 @sbpet_output_option
-#@verbose_option
+# @verbose_option
 def syn(
     mri_fnames: Iterable[str],
     mask_fnames: Iterable[str],
     out_fnames: Union[Iterable[str], None] = None,
-   # verbose: bool = False,
+    # verbose: bool = False,
 ) -> None:
     """Synthesize baseline PET images."""
     if out_fnames is None:
-        out_fnames = [_create_output_fname(mri_fname,suffix="_sb") for mri_fname in mri_fnames]
+        out_fnames = [
+            _create_output_fname(mri_fname, suffix="_sb") for mri_fname in mri_fnames
+        ]
     synthesize_baselines(mri_fnames, mask_fnames, out_fnames)
+
 
 def _create_output_fname(mri_fname, suffix="_sb", file_type=".nii.gz"):
     """Create output filename from input filename."""
@@ -79,32 +78,33 @@ def _create_output_fname(mri_fname, suffix="_sb", file_type=".nii.gz"):
     out_fname += suffix + file_type
     return out_fname
 
+
 pet_option = click.option(
-    "-p", 
-    "--pet", 
-    "pet_fnames", 
-    type=click.Path(exists=True), 
+    "-p",
+    "--pet",
+    "pet_fnames",
+    type=click.Path(exists=True),
     multiple=True,
     required=True,
-
 )
 
 sbpet_option = click.option(
-    "-s", 
-    "--sbpet", 
-    "sbpet_fnames", 
-    type=click.Path(exists=True), 
+    "-s",
+    "--sbpet",
+    "sbpet_fnames",
+    type=click.Path(exists=True),
     multiple=True,
     required=True,
 )
 
 abn_output_option = click.option(
-    "-o", 
-    "--o", 
-    "out_fnames", 
-    type=click.Path(), 
+    "-o",
+    "--o",
+    "out_fnames",
+    type=click.Path(),
     multiple=True,
 )
+
 
 @pet_option
 @sbpet_option
@@ -116,10 +116,12 @@ def abn(
     sbpet_fnames: Iterable[str],
     mask_fnames: Iterable[str],
     out_fnames: Union[Iterable[str], None] = None,
-    ):
+):
     """Create abnormality maps."""
     if out_fnames is None or len(out_fnames) == 0:
-        out_fnames = [_create_output_fname(pet_fname,suffix="_abn") for pet_fname in pet_fnames]
+        out_fnames = [
+            _create_output_fname(pet_fname, suffix="_abn") for pet_fname in pet_fnames
+        ]
 
     create_abnormality_maps(pet_fnames, sbpet_fnames, mask_fnames, out_fnames)
 

@@ -1,15 +1,21 @@
-# content of conftest.py
+"""Configuration for pytest."""
 
 import pytest
 from click.testing import CliRunner
 
 
 def pytest_addoption(parser):
+    """Add --runslow option to pytest command-line interface."""
     parser.addoption(
-        "--runslow", action="store_true", default=False, help="run slow tests with the full model"
+        "--runslow",
+        action="store_true",
+        default=False,
+        help="run slow tests with the full model",
     )
 
+
 def pytest_collection_modifyitems(config, items):
+    """Skip slow tests if --runslow is not specified."""
     if config.getoption("--runslow"):
         # --runslow given in cli: do not skip slow tests
         return

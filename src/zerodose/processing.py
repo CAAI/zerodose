@@ -1,13 +1,14 @@
 """Processing functions for the ZeroDose model."""
 
 import torch
+import torch.nn as nn
 import torchio as tio
 from torchio import SpatialTransform
 from torchio.data.subject import Subject
-import torch.nn as nn
 
 from zerodose import processing
 from zerodose import utils
+
 
 _X_MIN_MNI = 0
 _X_MAX_MNI = 192
@@ -94,27 +95,39 @@ def _to_float(image: tio.Image) -> None:
 
 
 class QuantileNormalization(nn.Module):
-    def __init__(self,
-                 quantile, 
-                 sigma_normalization=3, 
-                 ) -> None:
+    """Quantile normalization of the sbPET image."""
+
+    def __init__(
+        self,
+        quantile,
+        sigma_normalization=3,
+    ) -> None:
+        """Initialize the normalization module."""
         super().__init__()
         self.quantile = quantile
-        self.smooth_normalization = utils.GaussianSmoothing(channels=1,kernel_size=5*sigma_normalization,sigma=sigma_normalization,dim=3)
-    
-    def forward(self, pet: torch.Tensor, sbpet: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
-        return self._scale_sbpet(pet,sbpet,mask)
-        
+        self.smooth_normalization = utils.GaussianSmoothing(
+            channels=1,
+            kernel_size=5 * sigma_normalization,
+            sigma=sigma_normalization,
+            dim=3,
+        )
+
+    def forward(
+        self, pet: torch.Tensor, sbpet: torch.Tensor, mask: torch.Tensor
+    ) -> torch.Tensor:
+        """Normalize the sbPET image."""
+        return self._scale_sbpet(pet, sbpet, mask)
+
     def _get_normalization_mask(self, pet, mask):
-        qt = torch.quantile(pet[mask],self.quantile)
-        norm_mask = mask & (pet>qt)
+        qt = torch.quantile(pet[mask], self.quantile)
+        norm_mask = mask & (pet > qt)
         return norm_mask
-    
-    def _scale_sbpet(self, pet,sbpet,mask):
-        for i in range(2):
+
+    def _scale_sbpet(self, pet, sbpet, mask):
+        for _i in range(2):
             pet_blurred = self.smooth_normalization(pet)
             norm_mask = self._get_normalization_mask(pet_blurred, mask)
-            norm_const = torch.mean(pet[norm_mask])/torch.mean(sbpet[norm_mask])
+            norm_const = torch.mean(pet[norm_mask]) / torch.mean(sbpet[norm_mask])
             sbpet *= norm_const
             sbpet[~mask] = pet[~mask]
 

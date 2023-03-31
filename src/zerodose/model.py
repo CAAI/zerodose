@@ -2,10 +2,11 @@
 import torch
 import torch.nn as nn
 
+from zerodose import utils
+
 from .networks import DummyGenerator
 from .networks import UNet3D
 
-from zerodose import utils
 
 class ZeroDose(nn.Module):
     """ZeroDose model."""
@@ -21,24 +22,28 @@ class ZeroDose(nn.Module):
             self.generator = DummyGenerator()
         else:
             raise ValueError(f"Model type {model_type} not recognized.")
-        
+
     def forward(self, mrs: torch.Tensor) -> torch.Tensor:
         """Forward pass through the model."""
         return self.generator(mrs)
 
 
 class AbnormalityMap(nn.Module):
-    def __init__(self,
-                 sigma_smooth=3
-                 ) -> None:
+    """Abnormality map generator."""
+
+    def __init__(self, sigma_smooth=3) -> None:
+        """Initialize the Abnormality map."""
         super().__init__()
-        self.smooth = utils.GaussianSmoothing(channels=1,kernel_size=5*sigma_smooth,sigma=sigma_smooth,dim=3)
+        self.smooth = utils.GaussianSmoothing(
+            channels=1, kernel_size=5 * sigma_smooth, sigma=sigma_smooth, dim=3
+        )
 
-
-    def forward(self, pet: torch.Tensor, sbpet: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
+    def forward(
+        self, pet: torch.Tensor, sbpet: torch.Tensor, mask: torch.Tensor
+    ) -> torch.Tensor:
+        """Generate the abnormality map."""
         pet_blurred = self.smooth(pet)
         sbpet_blurred = self.smooth(sbpet)
-        abnormality_map = (pet_blurred-sbpet_blurred)/(sbpet_blurred+1e-7)*100
-        abnormality_map[torch.isnan(abnormality_map)]=0
+        abnormality_map = (pet_blurred - sbpet_blurred) / (sbpet_blurred + 1e-7) * 100
+        abnormality_map[torch.isnan(abnormality_map)] = 0
         return abnormality_map
-

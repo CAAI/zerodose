@@ -16,6 +16,7 @@ from zerodose import utils
 from zerodose.dataset import SubjectDataset
 from zerodose.model import ZeroDose
 
+
 def _infer_single_subject(
     model: ZeroDose,
     subject: tio.Subject,
@@ -82,14 +83,13 @@ def synthesize_baselines(
     patch_size = (32, 192, 192)
     patch_overlap = (32 - stride, 192 - stride, 192 - stride)
 
-    for sub in dataset:  # type: ignoregaussian_blure
+    for sub in dataset:  # type: ignore
         if verbose:
             print(f"Synthesizing sbPET for {sub.mr.path}")
 
         sbpet = _infer_single_subject(
             model, sub, patch_size, patch_overlap, batch_size, sd_weight, device
         )
-
 
         sbpet = sbpet.cpu().data * sub.mask.data
         sbpet = processing.postprocess(sbpet)

@@ -1,19 +1,19 @@
 """Utility functions."""
+import math
 import os
-import sys
 from typing import List
+from typing import Literal
 from typing import Tuple
 from typing import Union
-from typing import Literal
 from urllib.request import urlopen
-import math
+
 import nibabel as nib
 import torch
 import torch.nn as nn
+from torch.nn import functional
 
 from zerodose.model import ZeroDose
 from zerodose.paths import folder_with_parameter_files
-from torch.nn import functional as F
 
 
 def get_model_fname() -> str:
@@ -58,42 +58,33 @@ def maybe_mkdir_p(directory: str) -> None:
         if not os.path.isdir(os.path.join("/", *splits[: i + 1])):
             os.mkdir(os.path.join("/", *splits[: i + 1]))
 
+
 class GaussianSmoothing(nn.Module):
-    """
-    Apply gaussian smoothing on a
-    1d, 2d or 3d tensor. Filtering is performed seperately for each channel
-    in the input using a depthwise convolution.
-    Arguments:
-        channels (int, sequence): Number of channels of the input tensors. Output will
-            have this number of channels as well.
-        kernel_size (int, sequence): Size of the gaussian kernel.
-        sigma (float, sequence): Standard deviation of the gaussian kernel.
-        dim (int, optional): The number of dimensions of the data.
-            Default value is 2 (spatial).
-    """
+    """Apply gaussian smoothing on a tensor."""
+
     def __init__(self, channels, kernel_size, sigma, dim=2):
-        super(GaussianSmoothing, self).__init__()
+        """Make a new instance of the GaussianSmoothing class."""
+        super().__init__()
         self.kernel_size = kernel_size
         if self.kernel_size % 2 == 0:
-            raise ValueError('Kernel size must be odd.')
+            raise ValueError("Kernel size must be odd.")
         kernel_size = [kernel_size] * dim
         sigma = [sigma] * dim
-
-        
 
         # The gaussian kernel is the product of the
         # gaussian function of each dimension.
         kernel = 1
         meshgrids = torch.meshgrid(
-            [
-                torch.arange(size, dtype=torch.float32)
-                for size in kernel_size
-            ], indexing="xy"
+            [torch.arange(size, dtype=torch.float32) for size in kernel_size],
+            indexing="xy",
         )
-        for size, std, mgrid in zip(kernel_size, sigma, meshgrids):
+        for size, std, mgrid in zip(kernel_size, sigma, meshgrids):  # noqa
             mean = (size - 1) / 2
-            kernel *= 1 / (std * math.sqrt(2 * math.pi)) * \
-                      torch.exp(-((mgrid - mean) / (2 * std)) ** 2)
+            kernel *= (
+                1
+                / (std * math.sqrt(2 * math.pi))
+                * torch.exp(-(((mgrid - mean) / (2 * std)) ** 2))
+            )
 
         # Make sure sum of values in gaussian kernel equals 1.
         kernel = kernel / torch.sum(kernel)
@@ -102,37 +93,30 @@ class GaussianSmoothing(nn.Module):
         kernel = kernel.view(1, 1, *kernel.size())
         kernel = kernel.repeat(channels, *[1] * (kernel.dim() - 1))
 
-        self.register_buffer('weight', kernel)
+        self.register_buffer("weight", kernel)
         self.groups = channels
 
         if dim == 1:
-            self.conv = F.conv1d
+            self.conv = functional.conv1d
         elif dim == 2:
-            self.conv = F.conv2d
+            self.conv = functional.conv2d
         elif dim == 3:
-            self.conv = F.conv3d
+            self.conv = functional.conv3d
         else:
             raise RuntimeError(
-                'Only 1, 2 and 3 dimensions are supported. Received {}.'.format(dim)
+                f"Only 1, 2 and 3 dimensions are supported. Received {dim}."
             )
 
     def forward(self, input):
-        """
-        Apply gaussian filter to input.
-        Arguments:
-            input (torch.Tensor): Input to apply gaussian filter on.
-        Returns:
-            filtered (torch.Tensor): Filtered output.
-        """
-        return self.conv(input.unsqueeze(0), weight=self.weight, groups=self.groups, padding=(self.kernel_size-1)//2).squeeze(0)
-    
+        """Forward pass of the gaussian smoothing."""
+        return self.conv(
+            input.unsqueeze(0),
+            weight=self.weight,
+            groups=self.groups,
+            padding=(self.kernel_size - 1) // 2,
+        ).squeeze(0)
 
-def gaussian_blur(img, sigma=3):
-    with torch.no_grad():
-        gaussian_filter = GaussianSmoothing(channels=1,kernel_size=5*sigma,sigma=sigma,dim=3)
 
-        return gaussian_filter(img.unsqueeze(0)).squeeze()
-    
 def get_gaussian_weight(
     ps: Union[List[int], Tuple[int, int, int]], std: Union[float, int]
 ) -> torch.Tensor:
@@ -162,11 +146,15 @@ def save_nifty(data: torch.Tensor, filename_out: str, affine_ref: str) -> None:
     ni_img = nib.Nifti1Image(data, func)
     nib.save(ni_img, filename_out)
 
+
 def load_nifty(fname: str) -> torch.Tensor:
     """Loads a nifty file and returns it as a torch tensor."""
     return torch.from_numpy(nib.load(fname).get_fdata()).float()
 
-def get_model(model_type: Literal["standard", "dummy", "determine"] = "determine") -> ZeroDose:
+
+def get_model(
+    model_type: Literal["standard", "dummy", "determine"] = "determine"
+) -> ZeroDose:
     """Returns the ZeroDose model and loads the parameters."""
     if model_type == "determine":
         if os.environ.get("ZERODOSE_USE_DUMMY_MODEL"):
@@ -183,4 +171,4 @@ def get_model(model_type: Literal["standard", "dummy", "determine"] = "determine
         model.generator.load_state_dict(torch.load(weights_path))
         return model
     else:
-        raise ValueError("Unknown model type '{}'.".format(model_type))
+        raise ValueError(f"Unknown model type '{model_type!r}'.")
