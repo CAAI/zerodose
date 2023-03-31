@@ -6,29 +6,16 @@
 [![License](https://img.shields.io/pypi/l/zerodose)][license]
 [![Read the documentation at https://zerodose.readthedocs.io/](https://img.shields.io/readthedocs/zerodose/latest.svg?label=Read%20the%20Docs)][read the docs]
 [![Tests](https://github.com/ChristianHinge/zerodose/workflows/Tests/badge.svg)][tests]
-[![Codecov](https://codecov.io/gh/ChristianHinge/zerodose/branch/main/graph/badge.svg)][codecov]
-[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)][pre-commit]
-[![Black](https://img.shields.io/badge/code%20style-black-000000.svg)][black]
 
 [pypi_]: https://pypi.org/project/zerodose/
 [status]: https://pypi.org/project/zerodose/
-[python version]: https://pypi.org/project/zerodose
 [read the docs]: https://zerodose.readthedocs.io/
 [tests]: https://github.com/ChristianHinge/zerodose/actions?workflow=Tests
-[codecov]: https://app.codecov.io/gh/ChristianHinge/zerodose
-[pre-commit]: https://github.com/pre-commit/pre-commit
-[black]: https://github.com/psf/black
+[python version]: https://pypi.org/project/zerodose
 
-## Features
-
-- TODO
-
-## Requirements
-
-- TODO
 
 ## Installation
-
+Note that a python3 installation is required for _Zerodose_ to work.
 You can install _Zerodose_ via [pip] from [PyPI]:
 
 ```console
@@ -36,31 +23,28 @@ $ pip install zerodose
 ```
 
 ## Usage
+### Synthesize baseline PET
+```console
+$ zerodose syn -i mr.nii.gz -m brain_mask.nii.gz -o sb_pet.nii.gz
+```
+
+### Create abnormality map
+```console
+$ zerodose abn -p pet.nii.gz -s sb_pet.nii.gz -m brain_mask.nii.gz -o abn.nii.gz
+```
 
 Please see the [Command-line Reference] for details.
+## Hardware requirements
 
-## Contributing
+- TODO
+
+## Issues and contributing
 
 Contributions are very welcome.
-To learn more, see the [Contributor Guide].
-
-## License
-
-Distributed under the terms of the [MIT license][license],
-_Zerodose_ is free and open source software.
-
-## Issues
-
 If you encounter any problems,
-please [file an issue] along with a detailed description.
+please [file an issue] along with a description.
 
-## Credits
-
-This project was generated from [@cjolowicz]'s [Hypermodern Python Cookiecutter] template.
-
-[@cjolowicz]: https://github.com/cjolowicz
 [pypi]: https://pypi.org/
-[hypermodern python cookiecutter]: https://github.com/cjolowicz/cookiecutter-hypermodern-python
 [file an issue]: https://github.com/ChristianHinge/zerodose/issues
 [pip]: https://pip.pypa.io/
 
