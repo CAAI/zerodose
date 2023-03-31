@@ -16,8 +16,10 @@ class SubjectDataset(tio.data.SubjectsDataset):
         transforms = self._get_augmentation_transform_val()
         subjects = [
             self._make_subject_predict(mr_f, ma_f, ou_f)
-            for mr_f, ma_f, ou_f in zip(
-                mri_fnames, mask_fnames, out_fnames, strict=True
+            for mr_f, ma_f, ou_f in zip(  # noqa
+                mri_fnames,
+                mask_fnames,
+                out_fnames,
             )
         ]
 

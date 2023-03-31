@@ -1,7 +1,7 @@
 """Functions called by the CLI."""
 
 
-from typing import Iterable
+from typing import Sequence
 from typing import Tuple
 from typing import Union
 
@@ -29,7 +29,7 @@ def _infer_single_subject(
     """Infer a single subject."""
     grid_sampler = GridSampler(subject, ps, po)
     patch_loader = DataLoader(
-        grid_sampler, batch_size=bs, num_workers=4  # type: ignore
+        grid_sampler, batch_size=bs, num_workers=0  # type: ignore
     )
     aggregator = GridAggregator(grid_sampler, overlap_mode="average")
     aggregator_weight = GridAggregator(grid_sampler, overlap_mode="average")
@@ -49,26 +49,26 @@ def _infer_single_subject(
 
 
 def synthesize_baselines(
-    mri_fnames: Iterable[str],
-    mask_fnames: Iterable[str],
-    out_fnames: Iterable[str],
+    mri_fnames: Sequence[str],
+    mask_fnames: Sequence[str],
+    out_fnames: Sequence[str],
     device: Union[torch.device, str] = "cuda:0",
     sd_weight: Union[float, int] = 5,
-    verbose: bool = True,
+    verbose: bool = False,
     batch_size: int = 1,
     stride: int = 2,
     save_output: bool = True,
 ) -> None:
     """Synthesize baseline PET images from MRI images."""
-    if not isinstance(mri_fnames, list):
-        mri_fnames = list(mri_fnames)
-    if not isinstance(mask_fnames, list):
-        mask_fnames = list(mask_fnames)
-    if not isinstance(out_fnames, list):
-        out_fnames = list(out_fnames)
+    if isinstance(mri_fnames, str):
+        mri_fnames = [mri_fnames]
+    if isinstance(mask_fnames, str):
+        mask_fnames = [mask_fnames]
+    if isinstance(out_fnames, str):
+        out_fnames = [out_fnames]
 
     if not (len(mri_fnames) == len(mask_fnames) and len(mri_fnames) == len(out_fnames)):
-        Exception(
+        raise Exception(
             """The number of input files {} mask files {}
             and output files {} must be identical""".format(
                 len(mri_fnames), len(mask_fnames), len(out_fnames)
@@ -77,6 +77,7 @@ def synthesize_baselines(
 
     dataset = SubjectDataset(mri_fnames, mask_fnames, out_fnames)
     model = utils.get_model()
+
     model = model.to(device)
     model.eval()
     patch_size = (32, 192, 192)
@@ -97,4 +98,4 @@ def synthesize_baselines(
             if verbose:
                 print(f"Saving to {sub.out_fname}")
 
-            utils.save_nifty(sbpet, sub.out_fname, affine_ref=sub.mr.path)
+            utils.save_nifty(sbpet, sub.out_fname, affine_ref=str(sub.mr.path))
