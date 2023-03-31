@@ -17,7 +17,7 @@ class SubjectDataset(tio.data.SubjectsDataset):
         subjects = [
             self._make_subject_predict(mr_f, ma_f, ou_f)
             for mr_f, ma_f, ou_f in zip(
-                mri_fnames, mask_fnames, out_fnames, strict=True
+                mri_fnames, mask_fnames, out_fnames,
             )
         ]
 
@@ -47,3 +47,5 @@ class SubjectDataset(tio.data.SubjectsDataset):
                 ToFloat32(include=["mr"]),
             ]
         )
+
+

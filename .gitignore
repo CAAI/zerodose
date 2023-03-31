@@ -10,3 +10,4 @@
 __pycache__/
 local_files
 .vscode
+/tests/mni_test_data/*

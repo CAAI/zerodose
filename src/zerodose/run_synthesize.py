@@ -16,7 +16,6 @@ from zerodose import utils
 from zerodose.dataset import SubjectDataset
 from zerodose.model import ZeroDose
 
-
 def _infer_single_subject(
     model: ZeroDose,
     subject: tio.Subject,
@@ -29,7 +28,7 @@ def _infer_single_subject(
     """Infer a single subject."""
     grid_sampler = GridSampler(subject, ps, po)
     patch_loader = DataLoader(
-        grid_sampler, batch_size=bs, num_workers=4  # type: ignore
+        grid_sampler, batch_size=bs, num_workers=0  # type: ignore
     )
     aggregator = GridAggregator(grid_sampler, overlap_mode="average")
     aggregator_weight = GridAggregator(grid_sampler, overlap_mode="average")
@@ -54,7 +53,7 @@ def synthesize_baselines(
     out_fnames: Iterable[str],
     device: Union[torch.device, str] = "cuda:0",
     sd_weight: Union[float, int] = 5,
-    verbose: bool = True,
+    verbose: bool = False,
     batch_size: int = 1,
     stride: int = 2,
     save_output: bool = True,
@@ -77,18 +76,20 @@ def synthesize_baselines(
 
     dataset = SubjectDataset(mri_fnames, mask_fnames, out_fnames)
     model = utils.get_model()
+
     model = model.to(device)
     model.eval()
     patch_size = (32, 192, 192)
     patch_overlap = (32 - stride, 192 - stride, 192 - stride)
 
-    for sub in dataset:  # type: ignore
+    for sub in dataset:  # type: ignoregaussian_blure
         if verbose:
             print(f"Synthesizing sbPET for {sub.mr.path}")
 
         sbpet = _infer_single_subject(
             model, sub, patch_size, patch_overlap, batch_size, sd_weight, device
         )
+
 
         sbpet = sbpet.cpu().data * sub.mask.data
         sbpet = processing.postprocess(sbpet)
@@ -98,3 +99,5 @@ def synthesize_baselines(
                 print(f"Saving to {sub.out_fname}")
 
             utils.save_nifty(sbpet, sub.out_fname, affine_ref=sub.mr.path)
+
+    return 0
