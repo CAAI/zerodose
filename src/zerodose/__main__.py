@@ -1,6 +1,7 @@
 """Command-line interface."""
 import re
 from typing import Iterable
+from typing import Sequence
 from typing import Union
 
 import click
@@ -112,10 +113,10 @@ abn_output_option = click.option(
 @abn_output_option
 @main.command()
 def abn(
-    pet_fnames: Iterable[str],
-    sbpet_fnames: Iterable[str],
-    mask_fnames: Iterable[str],
-    out_fnames: Union[Iterable[str], None] = None,
+    pet_fnames: Sequence[str],
+    sbpet_fnames: Sequence[str],
+    mask_fnames: Sequence[str],
+    out_fnames: Union[Sequence[str], None] = None,
 ):
     """Create abnormality maps."""
     if out_fnames is None or len(out_fnames) == 0:

@@ -18,7 +18,7 @@ def create_abnormality_maps(
     verbose: bool = False,
     save_output: bool = True,
     device: str = "cuda:0",
-):
+) -> None:
     """Create abnormality maps from PET and sbPET images."""
     if not isinstance(pet_fnames, list):
         pet_fnames = list(pet_fnames)
@@ -44,7 +44,7 @@ def create_abnormality_maps(
     normalization = QuantileNormalization(quantile=0.97, sigma_normalization=3).to(
         device
     )
-    abnormality_map = AbnormalityMap(sigma_smooth=3).to(device)
+    abnormality_mapper = AbnormalityMap(sigma_smooth=3).to(device)
 
     with torch.no_grad():
         for i in range(len(pet_fnames)):  # type: ignore
@@ -56,7 +56,7 @@ def create_abnormality_maps(
             mask = utils.load_nifty(mask_fnames[i]).type(torch.bool).to(device)
 
             sbpet = normalization(pet, sbpet, mask)
-            abnormality_map = abnormality_map(pet, sbpet, mask)
+            abnormality_map = abnormality_mapper(pet, sbpet, mask)
 
             if save_output:
                 if verbose:
@@ -65,5 +65,3 @@ def create_abnormality_maps(
                 utils.save_nifty(
                     abnormality_map, out_fnames[i], affine_ref=pet_fnames[i]
                 )
-
-    return out_fnames
