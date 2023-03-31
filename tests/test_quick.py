@@ -4,8 +4,10 @@ import os
 import nibabel as nib
 import numpy as np
 import pytest
+import torch
 
 from zerodose import __main__
+from zerodose.utils import get_model
 
 
 @pytest.fixture()
@@ -91,6 +93,14 @@ def test_main_help_succeeds(runner) -> None:
     """It exits with a status code of zero."""
     result = runner.invoke(__main__.main, ["--help"])
     assert result.exit_code == 0
+
+
+@pytest.mark.parametrize("model_type", ["standard", "dummy"])
+def test_forward_pass(model_type) -> None:
+    """Test the initialize_model command."""
+    model = get_model(model_type)
+    outs = model.forward(torch.zeros(1, 1, 192, 192, 32))
+    assert outs.shape == (1, 1, 192, 192, 32)
 
 
 @pytest.mark.usefixtures("use_dummy_model")

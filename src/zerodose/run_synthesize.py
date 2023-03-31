@@ -98,4 +98,4 @@ def synthesize_baselines(
             if verbose:
                 print(f"Saving to {sub.out_fname}")
 
-            utils.save_nifty(sbpet, sub.out_fname, affine_ref=sub.mr.path)
+            utils.save_nifty(sbpet, sub.out_fname, affine_ref=str(sub.mr.path))

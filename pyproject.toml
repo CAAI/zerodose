@@ -55,6 +55,7 @@ zerodose = "zerodose.__main__:main"
 [tool.coverage.paths]
 source = ["src", "*/site-packages"]
 tests = ["tests", "*/tests"]
+omit = ["tests/*"]
 
 [tool.coverage.run]
 branch = true

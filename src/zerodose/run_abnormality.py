@@ -34,7 +34,7 @@ def create_abnormality_maps(
         and len(pet_fnames) == len(sbpet_fnames)
         and len(pet_fnames) == len(out_fnames)
     ):
-        raise Exception(
+        raise ValueError(
             """The number of PET files {} sbPET files {},
             mask files {} and output files {} must be identical""".format(
                 len(pet_fnames), len(sbpet_fnames), len(mask_fnames), len(out_fnames)
@@ -63,5 +63,5 @@ def create_abnormality_maps(
                     print(f"Saving to {out_fnames[i]}")
 
                 utils.save_nifty(
-                    abnormality_map, out_fnames[i], affine_ref=pet_fnames[i]
+                    abnormality_map, out_fnames[i], affine_ref=str(pet_fnames[i])
                 )
