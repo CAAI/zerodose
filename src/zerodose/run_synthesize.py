@@ -1,7 +1,7 @@
 """Functions called by the CLI."""
 
 
-from typing import Iterable
+from typing import Sequence
 from typing import Tuple
 from typing import Union
 
@@ -49,9 +49,9 @@ def _infer_single_subject(
 
 
 def synthesize_baselines(
-    mri_fnames: Iterable[str],
-    mask_fnames: Iterable[str],
-    out_fnames: Iterable[str],
+    mri_fnames: Sequence[str],
+    mask_fnames: Sequence[str],
+    out_fnames: Sequence[str],
     device: Union[torch.device, str] = "cuda:0",
     sd_weight: Union[float, int] = 5,
     verbose: bool = False,
@@ -60,15 +60,15 @@ def synthesize_baselines(
     save_output: bool = True,
 ) -> None:
     """Synthesize baseline PET images from MRI images."""
-    if not isinstance(mri_fnames, list):
-        mri_fnames = list(mri_fnames)
-    if not isinstance(mask_fnames, list):
-        mask_fnames = list(mask_fnames)
-    if not isinstance(out_fnames, list):
-        out_fnames = list(out_fnames)
+    if isinstance(mri_fnames, str):
+        mri_fnames = [mri_fnames]
+    if isinstance(mask_fnames, str):
+        mask_fnames = [mask_fnames]
+    if isinstance(out_fnames, str):
+        out_fnames = [out_fnames]
 
     if not (len(mri_fnames) == len(mask_fnames) and len(mri_fnames) == len(out_fnames)):
-        Exception(
+        raise Exception(
             """The number of input files {} mask files {}
             and output files {} must be identical""".format(
                 len(mri_fnames), len(mask_fnames), len(out_fnames)

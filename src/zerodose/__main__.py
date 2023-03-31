@@ -1,6 +1,5 @@
 """Command-line interface."""
 import re
-from typing import Iterable
 from typing import Sequence
 from typing import Union
 
@@ -16,6 +15,27 @@ def main() -> None:
     """Zerodose CLI."""
     pass
 
+
+device_option = click.option(
+    "-d",
+    "--device",
+    "device",
+    type=click.Choice(
+        [
+            "cpu",
+            "cuda:0",
+            "cuda:1",
+            "cuda:2",
+            "cuda:3",
+            "cuda:4",
+            "cuda:5",
+            "cuda:6",
+            "cuda:7",
+        ]
+    ),
+    default="cpu",
+    help="Device to use for inference.",
+)
 
 mri_option = click.option(
     "-i",
@@ -54,19 +74,23 @@ verbose_option = click.option(
 @mri_option
 @mask_option
 @sbpet_output_option
-# @verbose_option
+@verbose_option
+@device_option
 def syn(
-    mri_fnames: Iterable[str],
-    mask_fnames: Iterable[str],
-    out_fnames: Union[Iterable[str], None] = None,
-    # verbose: bool = False,
+    mri_fnames: Sequence[str],
+    mask_fnames: Sequence[str],
+    out_fnames: Union[Sequence[str], None] = None,
+    verbose: bool = False,
+    device: str = "cuda:0",
 ) -> None:
     """Synthesize baseline PET images."""
-    if out_fnames is None:
+    if out_fnames is None or len(out_fnames) == 0:
         out_fnames = [
             _create_output_fname(mri_fname, suffix="_sb") for mri_fname in mri_fnames
         ]
-    synthesize_baselines(mri_fnames, mask_fnames, out_fnames)
+    synthesize_baselines(
+        mri_fnames, mask_fnames, out_fnames, verbose=verbose, device=device
+    )
 
 
 def _create_output_fname(mri_fname, suffix="_sb", file_type=".nii.gz"):
@@ -111,12 +135,16 @@ abn_output_option = click.option(
 @sbpet_option
 @mask_option
 @abn_output_option
+@verbose_option
+@device_option
 @main.command()
 def abn(
     pet_fnames: Sequence[str],
     sbpet_fnames: Sequence[str],
     mask_fnames: Sequence[str],
     out_fnames: Union[Sequence[str], None] = None,
+    verbose: bool = False,
+    device: str = "cuda:0",
 ):
     """Create abnormality maps."""
     if out_fnames is None or len(out_fnames) == 0:
@@ -124,10 +152,11 @@ def abn(
             _create_output_fname(pet_fname, suffix="_abn") for pet_fname in pet_fnames
         ]
 
-    create_abnormality_maps(pet_fnames, sbpet_fnames, mask_fnames, out_fnames)
-
-
-if __name__ == "__main__":
-    main(
-        prog_name="zerodose",
+    create_abnormality_maps(
+        pet_fnames,
+        sbpet_fnames,
+        mask_fnames,
+        out_fnames,
+        verbose=verbose,
+        device=device,
     )

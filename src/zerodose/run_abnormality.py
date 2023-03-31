@@ -1,7 +1,7 @@
 """Functions called by the CLI."""
 
 
-from typing import Iterable
+from typing import Sequence
 
 import torch
 
@@ -11,23 +11,23 @@ from zerodose.processing import QuantileNormalization
 
 
 def create_abnormality_maps(
-    pet_fnames: Iterable[str],
-    sbpet_fnames: Iterable[str],
-    mask_fnames: Iterable[str],
-    out_fnames: Iterable[str],
+    pet_fnames: Sequence[str],
+    sbpet_fnames: Sequence[str],
+    mask_fnames: Sequence[str],
+    out_fnames: Sequence[str],
     verbose: bool = False,
     save_output: bool = True,
     device: str = "cuda:0",
 ) -> None:
     """Create abnormality maps from PET and sbPET images."""
-    if not isinstance(pet_fnames, list):
-        pet_fnames = list(pet_fnames)
-    if not isinstance(sbpet_fnames, list):
-        sbpet_fnames = list(sbpet_fnames)
-    if not isinstance(mask_fnames, list):
-        mask_fnames = list(mask_fnames)
-    if not isinstance(out_fnames, list):
-        out_fnames = list(out_fnames)
+    if isinstance(pet_fnames, str):
+        pet_fnames = [pet_fnames]
+    if isinstance(sbpet_fnames, str):
+        sbpet_fnames = [sbpet_fnames]
+    if isinstance(mask_fnames, str):
+        mask_fnames = [mask_fnames]
+    if isinstance(out_fnames, str):
+        out_fnames = [out_fnames]
 
     if not (
         len(pet_fnames) == len(mask_fnames)

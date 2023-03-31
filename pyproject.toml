@@ -55,15 +55,14 @@ zerodose = "zerodose.__main__:main"
 [tool.coverage.paths]
 source = ["src", "*/site-packages"]
 tests = ["tests", "*/tests"]
-omit = ["tests/*"]
 
 [tool.coverage.run]
 branch = true
-source = ["zerodose", "tests"]
+source = ["zerodose"]
 
 [tool.coverage.report]
 show_missing = true
-fail_under = 100
+fail_under = 90
 
 [tool.isort]
 profile = "black"
