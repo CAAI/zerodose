@@ -53,10 +53,8 @@ def maybe_download_parameters(
 
 def maybe_mkdir_p(directory: str) -> None:
     """Creates a directory if it does not exist yet."""
-    splits = directory.split("/")[1:]
-    for i in range(0, len(splits)):
-        if not os.path.isdir(os.path.join("/", *splits[: i + 1])):
-            os.mkdir(os.path.join("/", *splits[: i + 1]))
+    if not os.path.exists(directory):
+        os.makedirs(directory)
 
 
 class GaussianSmoothing(nn.Module):
