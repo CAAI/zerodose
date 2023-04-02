@@ -1,6 +1,7 @@
 """Dataset class for the ZeroDose project."""
 from typing import Any
 from typing import Dict
+from typing import List
 
 import torchio as tio
 
@@ -46,7 +47,7 @@ class SubjectDataset(tio.data.SubjectsDataset):
         return tio.Subject(subject_dict)
 
     def _get_augmentation_transform_val(self, do_registration=True) -> tio.Compose:
-        augmentations = []
+        augmentations: List[tio.Transform] = []
 
         if do_registration:
             ref = utils.get_mni_template()

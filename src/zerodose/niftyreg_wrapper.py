@@ -3,7 +3,7 @@ import os
 import tempfile
 
 import nibabel as nib
-import niftyreg
+import niftyreg  # type: ignore
 import numpy as np
 import torch
 from torchio import Subject
@@ -129,7 +129,7 @@ class NiftyRegistration(SpatialTransform):
         os.remove(temp_flo.name)
         inverse_ref = subject[self.floating_image].path
         transform = NiftyResample(ref=self.ref, affine=affine, inverse_ref=inverse_ref)
-        transformed = transform(subject)
+        transformed = transform.apply_transform(subject)
         return transformed
 
 

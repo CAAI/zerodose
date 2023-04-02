@@ -50,7 +50,7 @@ def _infer_single_subject(
 
 def _run_reverse_transform(sbpet, sub):
     temp_sub = tio.Subject({"sbpet": sbpet})
-    inverse_transform = sub.get_inverse_transform()
+    inverse_transform = sub.get_inverse_transform(warn=False)
     sbpet_img = inverse_transform(temp_sub)["sbpet"]
     mask = nib.load(sub["mask"].path).get_fdata()
     sbpet_img.set_data(sbpet_img.tensor * mask)
