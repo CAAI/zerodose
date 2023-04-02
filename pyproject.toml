@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "zerodose"
-version = "0.0.2"
+version = "0.0.3"
 description = "Zerodose"
 authors = ["Christian Hinge <christian.hinge@regionh.dk>"]
 license = "MIT"
@@ -18,9 +18,8 @@ Changelog = "https://github.com/ChristianHinge/zerodose/releases"
 [tool.poetry.dependencies]
 python = ">=3.8, <3.11"
 click = ">=8.0.1"
-torch = "^1.13.1"
-torchio = "^0.18.87"
-nibabel = "^5.0.1"
+torch = ">=1.0.0"
+torchio = "^0.18.0"
 niftyreg = "^1.5.70rc1"
 
 [tool.poetry.dev-dependencies]
