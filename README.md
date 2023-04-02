@@ -1,5 +1,10 @@
 # Zerodose
 
+![Alt text](resources/imgs/banner.jpg)
+
+A tool to assist in personalized abnormality investigation in combined FDG-PET/MRI imaging.
+Created by the department of [Clinically Applied Artificial Intelligence](http://caai.dk/) at [Copenhagen University Hospital](https://www.rigshospitalet.dk/)
+
 [![PyPI](https://img.shields.io/pypi/v/zerodose.svg)][pypi_]
 [![Status](https://img.shields.io/pypi/status/zerodose.svg)][status]
 [![Python Version](https://img.shields.io/pypi/pyversions/zerodose)][python version]
@@ -13,8 +18,8 @@
 [tests]: https://github.com/ChristianHinge/zerodose/actions?workflow=Tests
 [python version]: https://pypi.org/project/zerodose
 
-
 ## Installation
+
 Note that a python3 installation is required for _Zerodose_ to work.
 You can install _Zerodose_ via [pip] from [PyPI]:
 
@@ -23,17 +28,21 @@ $ pip install zerodose
 ```
 
 ## Usage
+
 ### Synthesize baseline PET
+
 ```console
 $ zerodose syn -i mr.nii.gz -m brain_mask.nii.gz -o sb_pet.nii.gz
 ```
 
 ### Create abnormality map
+
 ```console
 $ zerodose abn -p pet.nii.gz -s sb_pet.nii.gz -m brain_mask.nii.gz -o abn.nii.gz
 ```
 
 Please see the [Command-line Reference] for details.
+
 ## Hardware requirements
 
 - TODO
