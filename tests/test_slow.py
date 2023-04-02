@@ -60,7 +60,6 @@ def _augment_mni_img_for_tests(image_in_path, image_out_path):
 
 
 def _maybe_download_and_extract_mni():
-
     mni_dir = _get_mni_dir()
     if not os.path.isdir(mni_dir):
         os.mkdir(mni_dir)

@@ -35,7 +35,6 @@ def _read_matrix_nifty(file_name):
 
 
 def _register_mri_to_mni(mri_fname, ref):
-
     temp_aff = tempfile.NamedTemporaryFile(delete=False)
 
     out_mri_fname = os.path.dirname(mri_fname) + "/out_mri1.nii.gz"
@@ -61,7 +60,6 @@ def _register_mri_to_mni(mri_fname, ref):
 
 
 def _nifty_reg_resample(ref_path, flo_img, affine_mat):
-
     temp_flo = tempfile.NamedTemporaryFile(delete=False, suffix=".nii.gz")
     temp_res = tempfile.NamedTemporaryFile(delete=False, suffix=".nii.gz")
     temp_aff = tempfile.NamedTemporaryFile(delete=False)
