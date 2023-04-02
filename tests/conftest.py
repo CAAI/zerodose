@@ -1,7 +1,22 @@
 """Configuration for pytest."""
 
+import os
+
 import pytest
 from click.testing import CliRunner
+
+
+if os.getenv("_PYTEST_RAISE", "0") != "0":
+
+    @pytest.hookimpl(tryfirst=True)
+    def pytest_exception_interact(call):
+        """Debugging in vscode."""
+        raise call.excinfo.value
+
+    @pytest.hookimpl(tryfirst=True)
+    def pytest_internalerror(excinfo):
+        """Debugging in vscode."""
+        raise excinfo.value
 
 
 def pytest_addoption(parser):
@@ -29,3 +44,11 @@ def pytest_collection_modifyitems(config, items):
 def runner() -> CliRunner:
     """Fixture for invoking command-line interfaces."""
     return CliRunner()
+
+
+@pytest.fixture()
+def use_dummy_model():
+    """Use the dummy model for testing."""
+    os.environ["ZERODOSE_USE_DUMMY_MODEL"] = "1"
+    yield
+    del os.environ["ZERODOSE_USE_DUMMY_MODEL"]

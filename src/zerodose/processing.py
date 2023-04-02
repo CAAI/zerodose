@@ -38,33 +38,41 @@ def _crop_192_to_mni(arr: torch.Tensor) -> torch.Tensor:
     return parr
 
 
-def postprocess(arr: torch.Tensor) -> torch.Tensor:
-    """Postprocess the 192x192x192 image to MNI."""
-    return _crop_192_to_mni(arr)
-
-
-class Pad(SpatialTransform):
+class PadAndCropToMNI(SpatialTransform):
     """Pad the MNI image to 192x192x192."""
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, is_inverse=False, **kwargs) -> None:
         """Initialize the transform."""
+        self.is_inverse = is_inverse
         super().__init__(**kwargs)
 
     def apply_transform(self, subject: Subject) -> Subject:
         """Apply the transform to the subject."""
         for image in self.get_images(subject):
-            _pad(image)
+            if self.is_inverse:
+                _pad_inv(image)
+            else:
+                _pad(image)
 
         return subject
 
     @staticmethod
     def is_invertible() -> bool:
         """Return whether the transform is invertible."""
-        return False
+        return True
+
+    def inverse(self):
+        """Returns the inverse transform."""
+        return PadAndCropToMNI(is_inverse=True)
 
 
 def _pad(image: tio.Image) -> None:
     data = processing._crop_mni_to_192(image.data)
+    image.set_data(data)
+
+
+def _pad_inv(image: tio.Image) -> None:
+    data = processing._crop_192_to_mni(image.data)
     image.set_data(data)
 
 

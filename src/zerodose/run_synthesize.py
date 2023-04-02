@@ -5,13 +5,13 @@ from typing import Sequence
 from typing import Tuple
 from typing import Union
 
+import nibabel as nib
 import torch
 import torchio as tio
 from torch.utils.data import DataLoader
 from torchio.data import GridAggregator
 from torchio.data import GridSampler
 
-from zerodose import processing
 from zerodose import utils
 from zerodose.dataset import SubjectDataset
 from zerodose.model import ZeroDose
@@ -48,6 +48,15 @@ def _infer_single_subject(
     )
 
 
+def _run_reverse_transform(sbpet, sub):
+    temp_sub = tio.Subject({"sbpet": sbpet})
+    inverse_transform = sub.get_inverse_transform()
+    sbpet_img = inverse_transform(temp_sub)["sbpet"]
+    mask = nib.load(sub["mask"].path).get_fdata()
+    sbpet_img.set_data(sbpet_img.tensor * mask)
+    return sbpet_img
+
+
 def synthesize_baselines(
     mri_fnames: Sequence[str],
     mask_fnames: Sequence[str],
@@ -58,6 +67,7 @@ def synthesize_baselines(
     batch_size: int = 1,
     stride: int = 2,
     save_output: bool = True,
+    do_registration: bool = True,
 ) -> None:
     """Synthesize baseline PET images from MRI images."""
     if isinstance(mri_fnames, str):
@@ -75,7 +85,9 @@ def synthesize_baselines(
             )
         )
 
-    dataset = SubjectDataset(mri_fnames, mask_fnames, out_fnames)
+    dataset = SubjectDataset(
+        mri_fnames, mask_fnames, out_fnames, do_registration=do_registration
+    )
     model = utils.get_model()
 
     model = model.to(device)
@@ -87,15 +99,17 @@ def synthesize_baselines(
         if verbose:
             print(f"Synthesizing sbPET for {sub.mr.path}")
 
-        sbpet = _infer_single_subject(
+        sbpet_tensor = _infer_single_subject(
             model, sub, patch_size, patch_overlap, batch_size, sd_weight, device
         )
 
-        sbpet = sbpet.cpu().data * sub.mask.data
-        sbpet = processing.postprocess(sbpet)
+        sbpet_img = tio.ScalarImage(
+            tensor=sbpet_tensor.cpu().data, affine=sub["mr"].affine
+        )
+
+        sbpet_img = _run_reverse_transform(sbpet_img, sub)
 
         if save_output:
             if verbose:
                 print(f"Saving to {sub.out_fname}")
-
-            utils.save_nifty(sbpet, sub.out_fname, affine_ref=str(sub.mr.path))
+            sbpet_img.save(sub.out_fname)

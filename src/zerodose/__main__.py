@@ -33,7 +33,7 @@ device_option = click.option(
             "cuda:7",
         ]
     ),
-    default="cpu",
+    default="cuda:0",
     help="Device to use for inference.",
 )
 
@@ -69,6 +69,16 @@ verbose_option = click.option(
     help="Print verbose output.",
 )
 
+no_registration_option = click.option(
+    "-n",
+    "--no-registration",
+    "no_registration",
+    is_flag=True,
+    default=False,
+    help="""Skip registration to MNI space.
+    Useful if the input images already are in MNI space""",
+)
+
 
 @main.command()
 @mri_option
@@ -76,20 +86,29 @@ verbose_option = click.option(
 @sbpet_output_option
 @verbose_option
 @device_option
+@no_registration_option
 def syn(
     mri_fnames: Sequence[str],
     mask_fnames: Sequence[str],
     out_fnames: Union[Sequence[str], None] = None,
-    verbose: bool = False,
+    verbose: bool = True,
     device: str = "cuda:0",
+    no_registration: bool = False,
 ) -> None:
     """Synthesize baseline PET images."""
     if out_fnames is None or len(out_fnames) == 0:
         out_fnames = [
             _create_output_fname(mri_fname, suffix="_sb") for mri_fname in mri_fnames
         ]
+
+    do_registration = not no_registration
     synthesize_baselines(
-        mri_fnames, mask_fnames, out_fnames, verbose=verbose, device=device
+        mri_fnames,
+        mask_fnames,
+        out_fnames,
+        verbose=verbose,
+        device=device,
+        do_registration=do_registration,
     )
 
 

@@ -1,6 +1,8 @@
 """Utility functions."""
 import math
 import os
+import shutil
+import tempfile
 from typing import List
 from typing import Literal
 from typing import Tuple
@@ -14,11 +16,16 @@ from torch.nn import functional
 
 from zerodose.model import ZeroDose
 from zerodose.paths import folder_with_parameter_files
+from zerodose.paths import folder_with_templates
 
 
-def get_model_fname() -> str:
+def _get_model_fname() -> str:
     """Returns the path to the parameter file for the given fold."""
     return os.path.join(folder_with_parameter_files, "model_1.pt")
+
+
+def _get_mni_template_fname():
+    return os.path.join(folder_with_templates, "t1.nii")
 
 
 def _download_file(url: str, filename: str) -> None:
@@ -27,7 +34,7 @@ def _download_file(url: str, filename: str) -> None:
         f.write(data)
 
 
-def maybe_download_parameters(
+def _maybe_download_parameters(
     force_overwrite: bool = False, verbose: bool = True
 ) -> None:
     """Downloads the parameters for some fold if it is not present yet.
@@ -37,9 +44,9 @@ def maybe_download_parameters(
     :return:
     """
     if not os.path.isdir(folder_with_parameter_files):
-        maybe_mkdir_p(folder_with_parameter_files)
+        _maybe_mkdir_p(folder_with_parameter_files)
 
-    out_filename = get_model_fname()
+    out_filename = _get_model_fname()
 
     if force_overwrite and os.path.isfile(out_filename):
         os.remove(out_filename)
@@ -47,11 +54,45 @@ def maybe_download_parameters(
     if not os.path.isfile(out_filename):
         url = "http://sandbox.zenodo.org/record/1165160/files/gen2.pt?download=1"
         if verbose:
-            print("Downloading", url, "...")
+            print("Downloading model parameters", url, "...")
         _download_file(url, out_filename)
 
 
-def maybe_mkdir_p(directory: str) -> None:
+def _maybe_download_mni_template(
+    force_overwrite: bool = False, verbose: bool = True
+) -> None:
+
+    if not os.path.isdir(folder_with_templates):
+        _maybe_mkdir_p(folder_with_templates)
+
+    out_filename = _get_mni_template_fname()
+
+    if force_overwrite and os.path.isfile(out_filename):
+        os.remove(out_filename)
+
+    if not os.path.isfile(out_filename):
+        with tempfile.TemporaryDirectory() as tempdirname:
+
+            url = (
+                "https://www.bic.mni.mcgill.ca/~vfonov/icbm/"
+                "2009/mni_icbm152_nlin_sym_09a_nifti.zip"
+            )
+            filename = os.path.join(tempdirname, "mni_icbm152_nlin_sym_09a_nifti.zip")
+            if verbose:
+                print("Downloading MNI template", url, "...")
+            _download_file(url, filename)
+            if verbose:
+                print("Unpacking MNI template", url, "...")
+            shutil.unpack_archive(filename, tempdirname)
+            t1 = os.path.join(
+                tempdirname,
+                "mni_icbm152_nlin_sym_09a",
+                "mni_icbm152_t1_tal_nlin_sym_09a.nii",
+            )
+            shutil.copy(t1, out_filename)
+
+
+def _maybe_mkdir_p(directory: str) -> None:
     """Creates a directory if it does not exist yet."""
     if not os.path.exists(directory):
         os.makedirs(directory)
@@ -150,6 +191,18 @@ def load_nifty(fname: str) -> torch.Tensor:
     return torch.from_numpy(nib.load(fname).get_fdata()).float()
 
 
+def get_mni_template() -> str:
+    """Returns the path to the t1 MNI template. If missing, downloads the template."""
+    if os.environ.get("GITHUB_ACTIONS"):
+        raise Exception(
+            """MNI templates may not be downloaded by
+            pytests that do not have a 'slow' marker"""
+        )
+    else:
+        _maybe_download_mni_template()
+        return _get_mni_template_fname()
+
+
 def get_model(
     model_type: Literal["standard", "dummy", "determine"] = "determine"
 ) -> ZeroDose:
@@ -164,9 +217,10 @@ def get_model(
         return ZeroDose(model_type=model_type)
     elif model_type == "standard":
         model = ZeroDose(model_type=model_type)
-        maybe_download_parameters()
-        weights_path = get_model_fname()
-        model.generator.load_state_dict(torch.load(weights_path))
+        if not os.environ.get("GITHUB_ACTIONS"):
+            _maybe_download_parameters()
+            weights_path = _get_model_fname()
+            model.generator.load_state_dict(torch.load(weights_path))
         return model
     else:
         raise ValueError(f"Unknown model type '{model_type!r}'.")

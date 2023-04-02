@@ -21,6 +21,7 @@ click = ">=8.0.1"
 torch = "^1.13.1"
 torchio = "^0.18.87"
 nibabel = "^5.0.1"
+niftyreg = "^1.5.70rc1"
 
 [tool.poetry.dev-dependencies]
 Pygments = ">=2.10.0"
