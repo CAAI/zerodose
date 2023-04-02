@@ -128,9 +128,11 @@ class NiftyRegistration(SpatialTransform):
         temp_flo.close()
         os.remove(temp_flo.name)
         inverse_ref = subject[self.floating_image].path
-        transform = NiftyResample(ref=self.ref, affine=affine, inverse_ref=inverse_ref)
-        transformed = transform.apply_transform(subject)
-        return transformed
+        transformer = NiftyResample(
+            ref=self.ref, affine=affine, inverse_ref=inverse_ref
+        )
+        transformed = transformer(subject)
+        return transformed  # type: ignore
 
 
 class NiftyResample(SpatialTransform):
