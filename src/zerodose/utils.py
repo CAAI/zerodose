@@ -61,7 +61,6 @@ def _maybe_download_parameters(
 def _maybe_download_mni_template(
     force_overwrite: bool = False, verbose: bool = True
 ) -> None:
-
     if not os.path.isdir(folder_with_templates):
         _maybe_mkdir_p(folder_with_templates)
 
@@ -72,7 +71,6 @@ def _maybe_download_mni_template(
 
     if not os.path.isfile(out_filename):
         with tempfile.TemporaryDirectory() as tempdirname:
-
             url = (
                 "https://www.bic.mni.mcgill.ca/~vfonov/icbm/"
                 "2009/mni_icbm152_nlin_sym_09a_nifti.zip"
