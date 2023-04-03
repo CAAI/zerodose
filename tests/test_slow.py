@@ -167,7 +167,7 @@ def sbpet_outputfile():
     return fn
 
 
-# @pytest.mark.slow
+@pytest.mark.slow
 def test_syn_mni(runner, mri_mni_file, mask_mni_file, sbpet_outputfile) -> None:
     """Test the syn command with the standard model and MNI files."""
     result = runner.invoke(
