@@ -66,6 +66,22 @@ class PadAndCropToMNI(SpatialTransform):
         return PadAndCropToMNI(is_inverse=True)
 
 
+class Binarize(SpatialTransform):
+    """Binarize an image based on a threshhold."""
+
+    def __init__(self, threshold=0.5, **kwargs) -> None:
+        """Initialize the transform."""
+        self.threshold = threshold
+        super().__init__(**kwargs)
+
+    def apply_transform(self, subject: Subject) -> Subject:
+        """Apply the transform to the subject."""
+        for image in self.get_images(subject):
+            data = image.data
+            image.set_data(data > self.threshold)
+        return subject
+
+
 def _pad(image: tio.Image) -> None:
     data = processing._crop_mni_to_192(image.data)
     image.set_data(data)

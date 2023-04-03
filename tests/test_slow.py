@@ -24,7 +24,7 @@ def _get_mni_dir():
     return mni_dir
 
 
-def _augment_mni_img_for_tests(image_in_path, image_out_path):
+def _augment_mni_img_for_tests(image_in_path, image_out_path, binarize=False):
     rad = np.deg2rad(10)
     cos_gamma = np.cos(rad)
     sin_gamma = np.sin(rad)
@@ -51,6 +51,9 @@ def _augment_mni_img_for_tests(image_in_path, image_out_path):
     after_rot = resample_from_to(
         img_in, ((190, 200, 170), affine_mat.dot(img_in.affine))
     )
+    # if binarize:
+    #     data  = after_rot.get_fdata()
+    #     data.get
 
     ornt = np.array([[0, 1], [1, 1], [2, 1]])
 
@@ -199,4 +202,4 @@ def test_syn_niftyreg(mri_aug_file, mask_aug_file, sbpet_outputfile) -> None:
         device="cuda:0",
     )
 
-    assert nib.load(mri_aug_file).get_fdata().shape == start_shape
+    assert nib.load(sbpet_outputfile).get_fdata().shape == start_shape

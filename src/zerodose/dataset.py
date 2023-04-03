@@ -7,6 +7,7 @@ import torchio as tio
 
 from zerodose import utils
 from zerodose.niftyreg_wrapper import NiftyRegistration
+from zerodose.processing import Binarize
 from zerodose.processing import PadAndCropToMNI
 from zerodose.processing import ToFloat32
 
@@ -55,6 +56,7 @@ class SubjectDataset(tio.data.SubjectsDataset):
 
         augmentations.extend(
             [
+                Binarize(include=["mask"]),
                 tio.transforms.ZNormalization(include=["mr"], masking_method="mask"),
                 PadAndCropToMNI(include=["mr", "mask"]),
                 ToFloat32(include=["mr"]),
