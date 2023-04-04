@@ -245,12 +245,38 @@ def test_run_register(
 
 
 @pytest.mark.slow
-def test_run_no_pet(mask_aug_file, mri_aug_file, sbpet_outputfile):
+def test_run_no_pet(mask_aug_file, mri_aug_file, sbpet_outputfile, abn_outputfile):
     """Test the run command with the standard model and MNI files."""
     run_full(
         mri_fname=mri_aug_file,
         mask_fname=mask_aug_file,
         out_sbpet=sbpet_outputfile,
+        out_abn=abn_outputfile,
         device="cuda:0",
         verbose=True,
     )
+
+
+@pytest.mark.slow
+def test_run_cli(
+    runner, mri_mni_file, mask_mni_file, sbpet_outputfile, abn_outputfile, pet_mni_file
+) -> None:
+    """Test the syn command with the standard model and MNI files."""
+    result = runner.invoke(
+        __main__.main,
+        [
+            "run",
+            "-i",
+            mri_mni_file,
+            "-m",
+            mask_mni_file,
+            "-os",
+            sbpet_outputfile,
+            "-oa",
+            abn_outputfile,
+            "-p",
+            pet_mni_file,
+        ],
+    )
+
+    assert result.exit_code == 0

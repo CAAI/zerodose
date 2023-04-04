@@ -123,7 +123,6 @@ def run_full(  # noqa: C901
                     abn=abn,
                     mask=mask,
                     out_fname=out_img,
-                    verbose=verbose,
                 )
 
             if do_registration:

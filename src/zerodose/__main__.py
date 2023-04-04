@@ -83,6 +83,7 @@ no_registration_option = click.option(
 
 outputspace_option = click.option(
     "--space",
+    "outputspace",
     type=click.Choice(
         [
             "mr",
@@ -262,7 +263,7 @@ pet_option_single = click.option(
 sbpet_output_option_single = click.option(
     "-os",
     "--out-sbpet",
-    "out_sbet",
+    "out_sbpet",
     type=click.Path(),
     required=False,
 )
@@ -326,7 +327,7 @@ def run(
     mri_fname,
     mask_fname,
     pet_fname,
-    out_sbet,
+    out_sbpet,
     out_abn,
     out_img,
     no_registration,
@@ -343,23 +344,23 @@ def run(
     do_normalization = not no_normalization
     do_image = not no_image
 
-    if out_sbet is None:
-        out_sbet = _create_output_fname(pet_fname, suffix="_sb")
+    if out_sbpet is None:
+        out_sbpet = _create_output_fname(pet_fname, suffix="_sb")
     if out_abn is None:
         out_abn = _create_output_fname(pet_fname, suffix="_abn")
 
     run_full(
-        mri_fname,
-        mask_fname,
-        out_sbet,
-        pet_fname,
-        out_abn,
-        out_img,
-        do_registration,
-        do_abnormality,
-        do_normalization,
-        do_image,
-        verbose,
-        device,
-        outputspace,
+        mri_fname=mri_fname,
+        mask_fname=mask_fname,
+        out_sbpet=out_sbpet,
+        pet_fname=pet_fname,
+        out_abn=out_abn,
+        out_img=out_img,
+        do_registration=do_registration,
+        do_abnormality=do_abnormality,
+        do_normalization=do_normalization,
+        do_image=do_image,
+        verbose=verbose,
+        device=device,
+        outputspace=outputspace,
     )
