@@ -9,7 +9,8 @@ import pytest
 from nibabel.processing import resample_from_to
 
 from zerodose import __main__
-from zerodose.run_synthesize import synthesize_baselines
+from zerodose.pipeline import run_full
+from zerodose.pipeline import synthesize_baselines
 
 
 def _download_file(url: str, filename: str) -> None:
@@ -24,7 +25,7 @@ def _get_mni_dir():
     return mni_dir
 
 
-def _augment_mni_img_for_tests(image_in_path, image_out_path, binarize=False):
+def _augment_mni_img_for_tests(image_in_path, image_out_path):
     rad = np.deg2rad(10)
     cos_gamma = np.cos(rad)
     sin_gamma = np.sin(rad)
@@ -51,9 +52,6 @@ def _augment_mni_img_for_tests(image_in_path, image_out_path, binarize=False):
     after_rot = resample_from_to(
         img_in, ((190, 200, 170), affine_mat.dot(img_in.affine))
     )
-    # if binarize:
-    #     data  = after_rot.get_fdata()
-    #     data.get
 
     ornt = np.array([[0, 1], [1, 1], [2, 1]])
 
@@ -167,6 +165,13 @@ def sbpet_outputfile():
     return fn
 
 
+@pytest.fixture(scope="session")
+def abn_outputfile():
+    """Returns the path to an sbPET output file."""
+    fn = os.path.join(_get_mni_dir(), "abn.nii.gz")
+    return fn
+
+
 @pytest.mark.slow
 def test_syn_mni(runner, mri_mni_file, mask_mni_file, sbpet_outputfile) -> None:
     """Test the syn command with the standard model and MNI files."""
@@ -180,7 +185,6 @@ def test_syn_mni(runner, mri_mni_file, mask_mni_file, sbpet_outputfile) -> None:
             mask_mni_file,
             "-o",
             sbpet_outputfile,
-            "--no-registration",
         ],
     )
 
@@ -203,3 +207,50 @@ def test_syn_niftyreg(mri_aug_file, mask_aug_file, sbpet_outputfile) -> None:
     )
 
     assert nib.load(sbpet_outputfile).get_fdata().shape == start_shape
+
+
+@pytest.mark.slow
+def test_run(
+    pet_mni_file, mask_mni_file, mri_mni_file, sbpet_outputfile, abn_outputfile
+):
+    """Test the run command with the standard model and MNI files."""
+    run_full(
+        mri_fname=mri_mni_file,
+        mask_fname=mask_mni_file,
+        out_sbpet=sbpet_outputfile,
+        pet_fname=pet_mni_file,
+        out_abn=abn_outputfile,
+        device="cuda:0",
+        do_image=False,
+        do_registration=False,
+        verbose=True,
+    )
+
+
+@pytest.mark.slow
+def test_run_register(
+    pet_aug_file, mask_aug_file, mri_aug_file, sbpet_outputfile, abn_outputfile
+):
+    """Test the run command with the standard model and MNI files."""
+    run_full(
+        mri_fname=mri_aug_file,
+        mask_fname=mask_aug_file,
+        out_sbpet=sbpet_outputfile,
+        pet_fname=pet_aug_file,
+        out_abn=abn_outputfile,
+        device="cuda:0",
+        do_image=False,
+        verbose=True,
+    )
+
+
+@pytest.mark.slow
+def test_run_no_pet(mask_aug_file, mri_aug_file, sbpet_outputfile):
+    """Test the run command with the standard model and MNI files."""
+    run_full(
+        mri_fname=mri_aug_file,
+        mask_fname=mask_aug_file,
+        out_sbpet=sbpet_outputfile,
+        device="cuda:0",
+        verbose=True,
+    )

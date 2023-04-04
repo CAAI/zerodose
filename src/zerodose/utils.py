@@ -1,6 +1,7 @@
 """Utility functions."""
 import math
 import os
+import re
 import shutil
 import tempfile
 from typing import List
@@ -14,9 +15,18 @@ import torch
 import torch.nn as nn
 from torch.nn import functional
 
-from zerodose.model import ZeroDose
+from zerodose.models import ZeroDose
 from zerodose.paths import folder_with_parameter_files
 from zerodose.paths import folder_with_templates
+
+
+def binarize(img_path, out_path, threshold=0.5):
+    """Binarize an image."""
+    img = nib.load(img_path)
+    data = img.get_fdata()
+    data[data > threshold] = 1
+    img = nib.Nifti1Image(data, img.affine, img.header)
+    nib.save(img, out_path)
 
 
 def _get_model_fname() -> str:
@@ -222,3 +232,14 @@ def get_model(
         return model
     else:
         raise ValueError(f"Unknown model type '{model_type!r}'.")
+
+
+def _create_output_fname(mri_fname, suffix="_sb", file_type=".nii.gz"):
+    """Create output filename from input filename."""
+    out_fname = mri_fname
+    if out_fname.endswith(".nii.gz"):
+        out_fname = re.sub(".nii.gz$", "", out_fname)
+    if out_fname.endswith(".nii"):
+        out_fname = re.sub(".nii$", "", out_fname)
+    out_fname += suffix + file_type
+    return out_fname

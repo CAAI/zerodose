@@ -5,7 +5,6 @@ from typing import Sequence
 from typing import Tuple
 from typing import Union
 
-import nibabel as nib
 import torch
 import torchio as tio
 from torch.utils.data import DataLoader
@@ -14,7 +13,7 @@ from torchio.data import GridSampler
 
 from zerodose import utils
 from zerodose.dataset import SubjectDataset
-from zerodose.model import ZeroDose
+from zerodose.models import ZeroDose
 
 
 def _infer_single_subject(
@@ -48,15 +47,6 @@ def _infer_single_subject(
     )
 
 
-def _run_reverse_transform(sbpet, sub):
-    temp_sub = tio.Subject({"sbpet": sbpet})
-    inverse_transform = sub.get_inverse_transform(warn=False)
-    sbpet_img = inverse_transform(temp_sub)["sbpet"]
-    mask = nib.load(sub["mask"].path).get_fdata()
-    sbpet_img.set_data(sbpet_img.tensor * mask)
-    return sbpet_img
-
-
 def synthesize_baselines(
     mri_fnames: Sequence[str],
     mask_fnames: Sequence[str],
@@ -67,7 +57,7 @@ def synthesize_baselines(
     batch_size: int = 1,
     stride: int = 2,
     save_output: bool = True,
-    do_registration: bool = True,
+    apply_mask: bool = True,
 ) -> None:
     """Synthesize baseline PET images from MRI images."""
     if isinstance(mri_fnames, str):
@@ -85,9 +75,7 @@ def synthesize_baselines(
             )
         )
 
-    dataset = SubjectDataset(
-        mri_fnames, mask_fnames, out_fnames, do_registration=do_registration
-    )
+    dataset = SubjectDataset(mri_fnames, mask_fnames, out_fnames)
     model = utils.get_model()
 
     model = model.to(device)
@@ -107,9 +95,13 @@ def synthesize_baselines(
             tensor=sbpet_tensor.cpu().data, affine=sub["mr"].affine
         )
 
-        sbpet_img = _run_reverse_transform(sbpet_img, sub)
+        inverse_transform = sub.get_inverse_transform(warn=False)
+
+        sub.add_image(sbpet_img, "sbpet")
+        sub.remove_image("mr")
+        sub = inverse_transform(sub)
 
         if save_output:
             if verbose:
                 print(f"Saving to {sub.out_fname}")
-            sbpet_img.save(sub.out_fname)
+            sub["sbpet"].save(sub.out_fname)

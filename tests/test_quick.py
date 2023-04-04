@@ -6,8 +6,9 @@ import pytest
 import torch
 
 from zerodose import __main__
-from zerodose.run_abnormality import create_abnormality_maps
-from zerodose.run_synthesize import synthesize_baselines
+from zerodose.pipeline import create_abnormality_maps
+from zerodose.pipeline import normalize_to_pet
+from zerodose.pipeline import synthesize_baselines
 from zerodose.utils import get_model
 
 
@@ -150,7 +151,6 @@ def test_syn(runner, mri_file, mask_file, sbpet_outputfile) -> None:
         sbpet_outputfile,
         "--device",
         "cpu",
-        "--no-registration",
     ]
 
     result = runner.invoke(__main__.main, cmd)
@@ -169,7 +169,6 @@ def test_syn_no_output_fname(runner, mri_file, mask_file) -> None:
         mask_file,
         "--device",
         "cpu",
-        "--no-registration",
     ]
 
     result = runner.invoke(__main__.main, cmd)
@@ -188,7 +187,6 @@ def test_syn_function(mri_file, mask_file, sbpet_outputfile, save_output) -> Non
         verbose=True,
         save_output=save_output,
         device="cpu",
-        do_registration=False,
     )
 
 
@@ -228,7 +226,6 @@ def test_syn_multiple(runner, mri_file, mask_file, sbpet_outputfile) -> None:
         sbpet_outputfile,
         "--device",
         "cpu",
-        "--no-registration",
     ]
 
     result = runner.invoke(__main__.main, cmd)
@@ -251,7 +248,6 @@ def test_syn_input_validation(runner, mri_file, mask_file, sbpet_outputfile) -> 
         mri_file,
         "--device",
         "cpu",
-        "--no-registration",
     ]
 
     result = runner.invoke(__main__.main, cmd)
@@ -280,3 +276,15 @@ def test_abn(runner, pet_file_small, mask_file_small, sbpet_file_small, abn_outp
     )
 
     assert result.exit_code == 0
+
+
+@pytest.mark.usefixtures("use_dummy_model")
+def test_normalize(pet_file_small, sbpet_file_small, mask_file_small, sbpet_outputfile):
+    """Test the normalize command."""
+    normalize_to_pet(
+        pet_fnames=pet_file_small,
+        sbpet_fnames=sbpet_file_small,
+        mask_fnames=mask_file_small,
+        out_fnames=sbpet_outputfile,
+        device="cpu",
+    )
