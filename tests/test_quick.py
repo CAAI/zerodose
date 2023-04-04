@@ -279,7 +279,7 @@ def test_abn(runner, pet_file_small, mask_file_small, sbpet_file_small, abn_outp
 
 
 @pytest.mark.usefixtures("use_dummy_model")
-def test_normalize(mri_file, mask_file):
+def test_normalize(pet_file_small, mask_file_small, sbpet_outputfile, sbpet_file_small):
     """Test the normalize command."""
     normalize_to_pet(
         pet_fnames=pet_file_small,
