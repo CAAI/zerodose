@@ -6,11 +6,10 @@ from typing import Sequence
 import torch
 
 from zerodose import utils
-from zerodose.model import AbnormalityMap
-from zerodose.processing import QuantileNormalization
+from zerodose.models import QuantileNormalization
 
 
-def create_abnormality_maps(
+def normalize_to_pet(
     pet_fnames: Sequence[str],
     sbpet_fnames: Sequence[str],
     mask_fnames: Sequence[str],
@@ -19,7 +18,7 @@ def create_abnormality_maps(
     save_output: bool = True,
     device: str = "cuda:0",
 ) -> None:
-    """Create abnormality maps from PET and sbPET images."""
+    """Normalize sbPET to PET images."""
     if isinstance(pet_fnames, str):
         pet_fnames = [pet_fnames]
     if isinstance(sbpet_fnames, str):
@@ -44,24 +43,20 @@ def create_abnormality_maps(
     normalization = QuantileNormalization(quantile=0.97, sigma_normalization=3).to(
         device
     )
-    abnormality_mapper = AbnormalityMap(sigma_smooth=3).to(device)
 
     with torch.no_grad():
         for i in range(len(pet_fnames)):  # type: ignore
             if verbose:
-                print(f"Creating abnormality map for {pet_fnames[i]}")
+                print(f"Normalizing to {pet_fnames[i]}")
 
             pet = utils.load_nifty(pet_fnames[i]).to(device)
             sbpet = utils.load_nifty(sbpet_fnames[i]).to(device)
             mask = utils.load_nifty(mask_fnames[i]).type(torch.bool).to(device)
 
             sbpet = normalization(pet, sbpet, mask)
-            abnormality_map = abnormality_mapper(pet, sbpet, mask)
 
             if save_output:
                 if verbose:
                     print(f"Saving to {out_fnames[i]}")
 
-                utils.save_nifty(
-                    abnormality_map, out_fnames[i], affine_ref=str(pet_fnames[i])
-                )
+                utils.save_nifty(sbpet, out_fnames[i], affine_ref=str(pet_fnames[i]))
