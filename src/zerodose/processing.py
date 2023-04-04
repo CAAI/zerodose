@@ -36,7 +36,7 @@ def _crop_192_to_mni(arr: torch.Tensor) -> torch.Tensor:
     return parr
 
 
-class PadAndCropToMNI(SpatialTransform):
+class PadAndCropMNI(SpatialTransform):
     """Pad the MNI image to 192x192x192."""
 
     def __init__(self, is_inverse=False, **kwargs) -> None:
@@ -61,7 +61,7 @@ class PadAndCropToMNI(SpatialTransform):
 
     def inverse(self):
         """Returns the inverse transform."""
-        return PadAndCropToMNI(is_inverse=True)
+        return PadAndCropMNI(is_inverse=True)
 
 
 class Binarize(SpatialTransform):

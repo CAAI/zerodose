@@ -5,7 +5,7 @@ from typing import Dict
 import torchio as tio
 
 from zerodose.processing import Binarize
-from zerodose.processing import PadAndCropToMNI
+from zerodose.processing import PadAndCropMNI
 from zerodose.processing import ToFloat32
 
 
@@ -45,7 +45,7 @@ class SubjectDataset(tio.data.SubjectsDataset):
         augmentations = [
             Binarize(include=["mask"]),
             tio.transforms.ZNormalization(include=["mr"], masking_method="mask"),
-            PadAndCropToMNI(),
+            PadAndCropMNI(),
             ToFloat32(include=["mr"]),
         ]
 

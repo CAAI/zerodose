@@ -43,8 +43,21 @@ def _infer_single_subject(
     )
 
 
-def synthesize(mr, model):
+def synthesize(mr, model, device="cuda:0"):
     """Synthesize baseline PET images from MRI images."""
-    device = mr.device
-    sub = tio.Subject({"mr": mr})
-    return _infer_single_subject(sub=sub, model=model, device=device)
+    if len(mr.shape) == 3:
+        mr = mr.unsqueeze(0)
+
+    sub = tio.Subject({"mr": tio.ScalarImage(tensor=mr)})
+    stride = 2
+    patch_size = (32, 192, 192)
+    patch_overlap = (32 - stride, 192 - stride, 192 - stride)
+    sd_weight = (5,)
+    batch_size = (1,)
+    stride = (2,)
+
+    sbpet_tensor = _infer_single_subject(
+        model, sub, patch_size, patch_overlap, batch_size, sd_weight, device
+    )
+
+    return sbpet_tensor
