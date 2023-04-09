@@ -34,8 +34,11 @@ def _get_model_fname() -> str:
     return os.path.join(folder_with_parameter_files, "model_1.pt")
 
 
-def _get_mni_template_fname():
-    return os.path.join(folder_with_templates, "t1.nii")
+def _get_mni_template_fname(img="mr"):
+    if img == "mr":
+        return os.path.join(folder_with_templates, "t1.nii")
+    elif img == "mask":
+        return os.path.join(folder_with_templates, "mask.nii")
 
 
 def _download_file(url: str, filename: str) -> None:
@@ -74,12 +77,16 @@ def _maybe_download_mni_template(
     if not os.path.isdir(folder_with_templates):
         _maybe_mkdir_p(folder_with_templates)
 
-    out_filename = _get_mni_template_fname()
+    out_mri = _get_mni_template_fname(img="mr")
+    out_mask = _get_mni_template_fname(img="mask")
 
-    if force_overwrite and os.path.isfile(out_filename):
-        os.remove(out_filename)
+    if force_overwrite and os.path.isfile(out_mri):
+        os.remove(out_mri)
 
-    if not os.path.isfile(out_filename):
+    if force_overwrite and os.path.isfile(out_mri):
+        os.remove(out_mask)
+
+    if not os.path.isfile(out_mri) or not os.path.isfile(out_mask):
         with tempfile.TemporaryDirectory() as tempdirname:
             url = (
                 "https://www.bic.mni.mcgill.ca/~vfonov/icbm/"
@@ -97,7 +104,13 @@ def _maybe_download_mni_template(
                 "mni_icbm152_nlin_sym_09a",
                 "mni_icbm152_t1_tal_nlin_sym_09a.nii",
             )
-            shutil.copy(t1, out_filename)
+            mask = os.path.join(
+                tempdirname,
+                "mni_icbm152_nlin_sym_09a",
+                "mni_icbm152_t1_tal_nlin_sym_09a_mask.nii",
+            )
+            shutil.copy(t1, out_mri)
+            shutil.copy(mask, out_mask)
 
 
 def _maybe_mkdir_p(directory: str) -> None:
@@ -199,16 +212,16 @@ def load_nifty(fname: str) -> torch.Tensor:
     return torch.from_numpy(nib.load(fname).get_fdata()).float()
 
 
-def get_mni_template() -> str:
+def get_mni_template(img="mr") -> str:
     """Returns the path to the t1 MNI template. If missing, downloads the template."""
     if os.environ.get("GITHUB_ACTIONS"):
         raise Exception(
-            """MNI templates may not be downloaded by
-            pytests that do not have a 'slow' marker"""
+            """MNI templates should not be downloaded
+            when running GitHub Actions"""
         )
     else:
         _maybe_download_mni_template()
-        return _get_mni_template_fname()
+        return _get_mni_template_fname(img=img)
 
 
 def get_model(

@@ -9,7 +9,7 @@ import pytest
 from nibabel.processing import resample_from_to
 
 from zerodose import __main__
-from zerodose.pipeline import run_full
+from zerodose.pipeline import run_with_registration
 from zerodose.pipeline import synthesize_baselines
 
 
@@ -25,8 +25,30 @@ def _get_mni_dir():
     return mni_dir
 
 
-def _augment_mni_img_for_tests(image_in_path, image_out_path):
-    rad = np.deg2rad(10)
+def _rigid_augment_img_for_tests(image_in_path, image_out_path):
+    img_in = nib.load(image_in_path)
+    arr = img_in.get_fdata()
+    arr[:-15] = arr[15:]
+    img_out = nib.Nifti1Image(arr, affine=img_in.affine, header=img_in.header)
+    nib.save(img_out, image_out_path)
+    _augment_mni_img_for_tests(
+        image_out_path,
+        image_out_path,
+        augment_scale=False,
+        degree=25,
+        translation=(-3, 10, 5),
+    )
+
+
+def _augment_mni_img_for_tests(
+    image_in_path,
+    image_out_path,
+    augment_scale=True,
+    degree=-10,
+    translation=(12, -5, 7),
+):
+    rad = np.deg2rad(degree)
+
     cos_gamma = np.cos(rad)
     sin_gamma = np.sin(rad)
     rot_mat = np.array(
@@ -39,12 +61,20 @@ def _augment_mni_img_for_tests(image_in_path, image_out_path):
     )
 
     translation_mat = np.array(
-        [[1, 0, 0, 12], [0, 1, 0, -5], [0, 0, 1, 7], [0, 0, 0, 1]]
+        [
+            [1, 0, 0, translation[0]],
+            [0, 1, 0, translation[1]],
+            [0, 0, 1, translation[2]],
+            [0, 0, 0, 1],
+        ]
     )
 
-    scale_mat = np.array(
-        [[1.02, 0, 0, 0], [0, 1.3, 0, 0], [0, 0, 1.2, 0], [0, 0, 0, 1]]
-    )
+    if augment_scale:
+        scale_mat = np.array(
+            [[1.02, 0, 0, 0], [0, 1.3, 0, 0], [0, 0, 1.2, 0], [0, 0, 0, 1]]
+        )
+    else:
+        scale_mat = np.eye(4)
 
     affine_mat = rot_mat @ translation_mat @ scale_mat
     img_in = nib.load(image_in_path)
@@ -58,9 +88,12 @@ def _augment_mni_img_for_tests(image_in_path, image_out_path):
     img_orient = after_rot.as_reoriented(ornt)
 
     nib.save(img_orient, image_out_path)
+    img = nib.load(image_out_path).get_fdata()
+    img = nib.Nifti1Image(img, affine=np.eye(4))
+    nib.save(img, image_out_path)
 
 
-def _maybe_download_and_extract_mni():
+def _maybe_download_and_extract_mni():  # noqa
     mni_dir = _get_mni_dir()
     if not os.path.isdir(mni_dir):
         os.mkdir(mni_dir)
@@ -96,6 +129,9 @@ def _maybe_download_and_extract_mni():
     augmented_mri_path = os.path.join(agumented_images_dir, "t1.nii.gz")
     augmented_pet_path = os.path.join(agumented_images_dir, "pet.nii.gz")
     augmented_mask_path = os.path.join(agumented_images_dir, "mask.nii.gz")
+    augmented_pet_rigid_path = os.path.join(agumented_images_dir, "pet_rigid.nii.gz")
+    shift_mr_path = os.path.join(agumented_images_dir, "t1_shift.nii.gz")
+    shift_mask_path = os.path.join(agumented_images_dir, "mask_shifted.nii.gz")
 
     if not os.path.exists(augmented_mri_path):
         _augment_mni_img_for_tests(mri_path, augmented_mri_path)
@@ -103,6 +139,12 @@ def _maybe_download_and_extract_mni():
         _augment_mni_img_for_tests(pet_path, augmented_pet_path)
     if not os.path.exists(augmented_mask_path):
         _augment_mni_img_for_tests(mask_path, augmented_mask_path)
+    if not os.path.exists(augmented_pet_rigid_path):
+        _rigid_augment_img_for_tests(augmented_pet_path, augmented_pet_rigid_path)
+    if not os.path.exists(shift_mr_path):
+        _rigid_augment_img_for_tests(mri_path, shift_mr_path)
+    if not os.path.exists(shift_mask_path):
+        _rigid_augment_img_for_tests(mask_path, shift_mask_path)
 
     images_dict = {
         "mri_mni": mri_path,
@@ -111,6 +153,9 @@ def _maybe_download_and_extract_mni():
         "mri_aug": augmented_mri_path,
         "pet_aug": augmented_pet_path,
         "mask_aug": augmented_mask_path,
+        "pet_aug_rigid": augmented_pet_rigid_path,
+        "mask_shift": shift_mask_path,
+        "mri_shift": shift_mr_path,
     }
 
     return images_dict
@@ -147,9 +192,27 @@ def pet_aug_file():
 
 
 @pytest.fixture(scope="session")
+def pet_aug_rigid_file():
+    """Augmented."""
+    return get_test_image_path("pet_aug_rigid")
+
+
+@pytest.fixture(scope="session")
 def mask_aug_file():
     """Returns the path to the MNI PET file."""
     return get_test_image_path("mask_aug")
+
+
+@pytest.fixture(scope="session")
+def mri_shift_file():
+    """Shifted MRI FILE."""
+    return get_test_image_path("mri_shift")
+
+
+@pytest.fixture(scope="session")
+def mask_shift_file():
+    """Returns the path to the MNI PET file."""
+    return get_test_image_path("mask_shift")
 
 
 @pytest.fixture(scope="session")
@@ -169,6 +232,13 @@ def sbpet_outputfile():
 def abn_outputfile():
     """Returns the path to an sbPET output file."""
     fn = os.path.join(_get_mni_dir(), "abn.nii.gz")
+    return fn
+
+
+@pytest.fixture(scope="session")
+def png_outputfile():
+    """Returns the path to an sbPET output file."""
+    fn = os.path.join(_get_mni_dir(), "figure.png")
     return fn
 
 
@@ -214,7 +284,7 @@ def test_run(
     pet_mni_file, mask_mni_file, mri_mni_file, sbpet_outputfile, abn_outputfile
 ):
     """Test the run command with the standard model and MNI files."""
-    run_full(
+    run_with_registration(
         mri_fname=mri_mni_file,
         mask_fname=mask_mni_file,
         out_sbpet=sbpet_outputfile,
@@ -232,7 +302,7 @@ def test_run_register(
     pet_aug_file, mask_aug_file, mri_aug_file, sbpet_outputfile, abn_outputfile
 ):
     """Test the run command with the standard model and MNI files."""
-    run_full(
+    run_with_registration(
         mri_fname=mri_aug_file,
         mask_fname=mask_aug_file,
         out_sbpet=sbpet_outputfile,
@@ -245,15 +315,25 @@ def test_run_register(
 
 
 @pytest.mark.slow
-def test_run_no_pet(mask_aug_file, mri_aug_file, sbpet_outputfile, abn_outputfile):
+def test_run_no_pet(
+    mask_aug_file,
+    mri_aug_file,
+    sbpet_outputfile,
+    abn_outputfile,
+    png_outputfile,
+    pet_aug_rigid_file,
+):
     """Test the run command with the standard model and MNI files."""
-    run_full(
+    run_with_registration(
         mri_fname=mri_aug_file,
         mask_fname=mask_aug_file,
         out_sbpet=sbpet_outputfile,
         out_abn=abn_outputfile,
+        out_img=png_outputfile,
+        pet_fname=pet_aug_rigid_file,
         device="cuda:0",
-        verbose=True,
+        verbose=False,
+        reg_pet_to_mri=True,
     )
 
 
@@ -265,7 +345,7 @@ def test_run_cli(
     result = runner.invoke(
         __main__.main,
         [
-            "run",
+            "pipeline",
             "-i",
             mri_mni_file,
             "-m",

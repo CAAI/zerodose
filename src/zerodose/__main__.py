@@ -6,7 +6,7 @@ import click
 
 from zerodose.pipeline import create_abnormality_maps
 from zerodose.pipeline import normalize_to_pet
-from zerodose.pipeline import run_full
+from zerodose.pipeline import run_with_registration
 from zerodose.pipeline import synthesize_baselines
 from zerodose.utils import _create_output_fname
 
@@ -308,6 +308,14 @@ no_image_option = click.option(
     help="Print verbose output.",
 )
 
+no_reg_pet_to_mr_option = click.option(
+    "--no-pet-rigid",
+    "no_reg_pet_to_mr",
+    is_flag=True,
+    default=False,
+    help="Print verbose output.",
+)
+
 
 @mri_option_single
 @mask_option_single
@@ -315,51 +323,46 @@ no_image_option = click.option(
 @sbpet_output_option_single
 @abn_output_option_single
 @img_output_option_single
-@no_registration_option
-@no_abnormality_option
-@no_normalization_option
+@no_reg_pet_to_mr_option
 @no_image_option
 @verbose_option
 @device_option
 @outputspace_option
 @main.command()
-def run(
+def pipeline(
     mri_fname,
     mask_fname,
     pet_fname,
     out_sbpet,
     out_abn,
     out_img,
-    no_registration,
-    no_abnormality,
-    no_normalization,
+    no_reg_pet_to_mr,
     no_image,
     verbose,
     device,
     outputspace,
 ):
     """Run full pipeline."""
-    do_registration = not no_registration
-    do_abnormality = not no_abnormality
-    do_normalization = not no_normalization
+    reg_pet_to_mr = not no_reg_pet_to_mr
     do_image = not no_image
 
     if out_sbpet is None:
         out_sbpet = _create_output_fname(pet_fname, suffix="_sb")
     if out_abn is None:
         out_abn = _create_output_fname(pet_fname, suffix="_abn")
+    if out_img is None and do_image:
+        out_img = _create_output_fname(
+            pet_fname, suffix="_abn_figure", file_type=".png"
+        )
 
-    run_full(
+    run_with_registration(
         mri_fname=mri_fname,
         mask_fname=mask_fname,
         out_sbpet=out_sbpet,
         pet_fname=pet_fname,
         out_abn=out_abn,
         out_img=out_img,
-        do_registration=do_registration,
-        do_abnormality=do_abnormality,
-        do_normalization=do_normalization,
-        do_image=do_image,
+        reg_pet_to_mri=reg_pet_to_mr,
         verbose=verbose,
         device=device,
         outputspace=outputspace,

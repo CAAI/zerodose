@@ -21,6 +21,11 @@ click = ">=8.0.1"
 torch = ">=1.0.0"
 torchio = "^0.18.0"
 niftyreg = "^1.5.70rc1"
+matplotlib = {version = "^3.7.1", optional = true}
+opencv-python = {version = "^4.7.0.72", optional = true}
+
+[tool.poetry.extras]
+plotting = ["matplotlib","opencv-python"]
 
 [tool.poetry.dev-dependencies]
 Pygments = ">=2.10.0"
