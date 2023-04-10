@@ -40,7 +40,7 @@ def synthesize_baselines(
             )
         )
 
-    dataset = SubjectDataset(mri_fnames, mask_fnames, out_fnames)
+    dataset = SubjectDataset(mri_fnames, mask_fnames)
     model = utils.get_model()
 
     model = model.to(device)
@@ -48,7 +48,7 @@ def synthesize_baselines(
     patch_size = (32, 192, 192)
     patch_overlap = (32 - stride, 192 - stride, 192 - stride)
 
-    for sub in dataset:  # type: ignore
+    for i, sub in enumerate(dataset):  # type: ignore
         if verbose:
             print(f"Synthesizing sbPET for {sub.mr.path}")
 
@@ -68,5 +68,5 @@ def synthesize_baselines(
 
         if save_output:
             if verbose:
-                print(f"Saving to {sub.out_fname}")
-            sub["sbpet"].save(sub.out_fname)
+                print(f"Saving to {out_fnames[i]}")
+            sub["sbpet"].save(out_fnames[i])

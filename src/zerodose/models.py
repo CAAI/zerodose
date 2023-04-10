@@ -27,6 +27,11 @@ class ZeroDose(nn.Module):
         """Forward pass through the model."""
         return self.generator(mrs)
 
+    @staticmethod
+    def get_default():
+        """Get the default model."""
+        return utils.get_model()
+
 
 class AbnormalityMap(nn.Module):
     """Abnormality map generator."""
@@ -37,6 +42,11 @@ class AbnormalityMap(nn.Module):
         self.smooth = utils.GaussianSmoothing(
             channels=1, kernel_size=5 * sigma_smooth, sigma=sigma_smooth, dim=3
         )
+
+    @staticmethod
+    def get_default():
+        """Get the default model."""
+        return AbnormalityMap(sigma_smooth=3)
 
     def forward(
         self, pet: torch.Tensor, sbpet: torch.Tensor, mask: torch.Tensor
@@ -88,3 +98,8 @@ class QuantileNormalization(nn.Module):
             sbpet[~mask] = pet[~mask]
 
         return sbpet
+
+    @staticmethod
+    def get_default():
+        """Get the default model."""
+        return QuantileNormalization(quantile=0.97, sigma_normalization=3)

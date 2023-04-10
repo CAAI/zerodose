@@ -1,11 +1,34 @@
 """Niftyreg wrapper for torchio."""
+import os
 import tempfile
 
 import niftyreg  # type: ignore
 import numpy as np
 
-from zerodose.utils import binarize
 from zerodose.utils import get_mni_template
+
+
+def _rigid_pet_to_ref(pet_path, ref_path):
+    with tempfile.TemporaryDirectory() as tempdir:
+        out_rigid = os.path.join(tempdir, "rigid.txt")
+        out_temp = os.path.join(tempdir, "out.nii.gz")
+        niftyreg.main(
+            [
+                "aladin",
+                "-flo",
+                pet_path,
+                "-ref",
+                ref_path,
+                "-res",
+                out_temp,
+                "-aff",
+                out_rigid,
+                "-voff",
+                "-rigOnly",
+            ],
+        )
+        mat_rig = _read_matrix_nifty(out_rigid)
+        return mat_rig
 
 
 def from_mni(
@@ -45,25 +68,29 @@ def to_mni(
     out_mask_fname,
     out_pet_fname,
     out_affine_fname,
+    reg_pet_to_mri=True,
 ):
     """Resample a floating image to a reference image using an affine matrix."""
-    ref = get_mni_template()
+    ref = get_mni_template("mask")
+
     niftyreg.main(
         [
             "aladin",
             "-flo",
-            in_mri_fname,
+            in_mask_fname,
             "-ref",
             ref,
             "-res",
-            out_mri_fname,
+            out_mask_fname,
             "-aff",
             out_affine_fname,
             "-speeeeed",
             "-voff",
         ],
     )
+
     in_affine = out_affine_fname
+
     niftyreg.main(
         [
             "resample",
@@ -75,11 +102,32 @@ def to_mni(
             out_mask_fname,
             "-aff",
             in_affine,
+            "-inter",
+            "0",
+        ]
+    )
+
+    niftyreg.main(
+        [
+            "resample",
+            "-ref",
+            ref,
+            "-flo",
+            in_mri_fname,
+            "-res",
+            out_mri_fname,
+            "-aff",
+            in_affine,
             "-voff",
         ]
     )
 
-    binarize(out_mask_fname, out_mask_fname)
+    if reg_pet_to_mri and in_pet_fname is not None:
+        mat_rig = _rigid_pet_to_ref(in_pet_fname, in_mri_fname)
+        mat_aff = _read_matrix_nifty(in_affine)
+        mat_aff = mat_rig @ mat_aff
+        _save_matrix_nifty(mat_aff, in_affine)
+
     if in_pet_fname is not None:
         niftyreg.main(
             [

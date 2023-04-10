@@ -61,3 +61,15 @@ def synthesize(mr, model, device="cuda:0"):
     )
 
     return sbpet_tensor
+
+
+def get_inference_params():
+    """Returns the default parameters for inference stitching."""
+    stride = 2
+    params = {
+        "patch_size": (32, 192, 192),
+        "patch_overlap": (32 - stride, 192 - stride, 192 - stride),
+        "batch_size": 1,
+        "sd_weight": 5,
+    }
+    return params
