@@ -12,13 +12,13 @@ from zerodose.utils import load_nifty
 def _real_fake_compare_vis_metric2(  # noqa
     real, fake, mri, mask, err, errmask, save_fname
 ):  # noqa
-    import cv2 as cv
-    import matplotlib
-    import matplotlib as mpl
-    from matplotlib import pyplot as plt
-    from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-    from numpy.ma import masked_array
-    from scipy import ndimage
+    import cv2 as cv  # type: ignore
+    import matplotlib  # type: ignore
+    import matplotlib as mpl  # type: ignore
+    from matplotlib import pyplot as plt  # type: ignore
+    from mpl_toolkits.axes_grid1.inset_locator import inset_axes  # type: ignore
+    from numpy.ma import masked_array  # type: ignore
+    from scipy import ndimage  # type: ignore
 
     def _get_cmap():
         colors = [

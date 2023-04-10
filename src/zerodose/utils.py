@@ -10,7 +10,7 @@ from typing import Tuple
 from typing import Union
 from urllib.request import urlopen
 
-import nibabel as nib
+import nibabel as nib  # type: ignore
 import torch
 import torch.nn as nn
 from torch.nn import functional
@@ -18,6 +18,35 @@ from torch.nn import functional
 from zerodose.models import ZeroDose
 from zerodose.paths import folder_with_parameter_files
 from zerodose.paths import folder_with_templates
+
+
+def save_nifty(data: torch.Tensor, filename_out: str, affine_ref: str) -> None:
+    """Saves a nifty file."""
+    save_directory = os.path.dirname(filename_out)
+    if not os.path.exists(save_directory):
+        os.makedirs(save_directory)
+
+    func = nib.load(affine_ref).affine  # type: ignore
+    data = data.squeeze().cpu().detach().numpy()
+    ni_img = nib.Nifti1Image(data, func)
+    nib.save(ni_img, filename_out)
+
+
+def load_nifty(fname: str) -> torch.Tensor:
+    """Loads a nifty file and returns it as a torch tensor."""
+    return torch.from_numpy(nib.load(fname).get_fdata()).float()  # type: ignore
+
+
+def get_mni_template(img="mr") -> str:
+    """Returns the path to the t1 MNI template. If missing, downloads the template."""
+    if os.environ.get("GITHUB_ACTIONS"):
+        raise Exception(
+            """MNI templates should not be downloaded
+            when running GitHub Actions"""
+        )
+    else:
+        _maybe_download_mni_template()
+        return _get_mni_template_fname(img=img)
 
 
 def binarize(img_path, out_path, threshold=0.5):
@@ -193,35 +222,6 @@ def get_gaussian_weight(
     weight = torch.ones(ps)
     weight *= gaussian_vec
     return weight.unsqueeze(0).unsqueeze(0)
-
-
-def save_nifty(data: torch.Tensor, filename_out: str, affine_ref: str) -> None:
-    """Saves a nifty file."""
-    save_directory = os.path.dirname(filename_out)
-    if not os.path.exists(save_directory):
-        os.makedirs(save_directory)
-
-    func = nib.load(affine_ref).affine
-    data = data.squeeze().cpu().detach().numpy()
-    ni_img = nib.Nifti1Image(data, func)
-    nib.save(ni_img, filename_out)
-
-
-def load_nifty(fname: str) -> torch.Tensor:
-    """Loads a nifty file and returns it as a torch tensor."""
-    return torch.from_numpy(nib.load(fname).get_fdata()).float()
-
-
-def get_mni_template(img="mr") -> str:
-    """Returns the path to the t1 MNI template. If missing, downloads the template."""
-    if os.environ.get("GITHUB_ACTIONS"):
-        raise Exception(
-            """MNI templates should not be downloaded
-            when running GitHub Actions"""
-        )
-    else:
-        _maybe_download_mni_template()
-        return _get_mni_template_fname(img=img)
 
 
 def get_model(
