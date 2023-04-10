@@ -2,103 +2,100 @@
 
 import math
 
-import cv2 as cv
-import matplotlib
-import matplotlib as mpl
 import numpy as np
 import torch
-from matplotlib import pyplot as plt
-from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-from numpy.ma import masked_array
-from scipy import ndimage
 
 from zerodose.processing import _crop_mni_to_192
 from zerodose.utils import load_nifty
 
 
-def _get_cmap():
-    colors = [
-        [0, 0, 0],
-        [0, 26, 255],
-        [66, 245, 245],
-        [66, 245, 72],
-        [245, 233, 66],
-        [245, 66, 66],
-        [255, 255, 255],
-    ]
-    fracs = [0, 1 / 6, 2 / 6, 3 / 6, 4 / 6, 5 / 6, 6 / 6]
+def _real_fake_compare_vis_metric2(  # noqa
+    real, fake, mri, mask, err, errmask, save_fname
+):  # noqa
+    import cv2 as cv
+    import matplotlib
+    import matplotlib as mpl
+    from matplotlib import pyplot as plt
+    from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+    from numpy.ma import masked_array
+    from scipy import ndimage
 
-    cdict = {}
-    red = []
-    green = []
-    blue = []
-    for i in range(len(colors)):
-        c = colors[i][0] / 255
-        red.append((fracs[i], c, c))
-        c = colors[i][1] / 255
-        green.append((fracs[i], c, c))
-        c = colors[i][2] / 255
-        blue.append((fracs[i], c, c))
-    cdict = {"red": red, "green": green, "blue": blue}
+    def _get_cmap():
+        colors = [
+            [0, 0, 0],
+            [0, 26, 255],
+            [66, 245, 245],
+            [66, 245, 72],
+            [245, 233, 66],
+            [245, 66, 66],
+            [255, 255, 255],
+        ]
+        fracs = [0, 1 / 6, 2 / 6, 3 / 6, 4 / 6, 5 / 6, 6 / 6]
 
-    cmap = matplotlib.colors.LinearSegmentedColormap(
-        "testCmap", segmentdata=cdict, N=256
-    )
-    return cmap
+        cdict = {}
+        red = []
+        green = []
+        blue = []
+        for i in range(len(colors)):
+            c = colors[i][0] / 255
+            red.append((fracs[i], c, c))
+            c = colors[i][1] / 255
+            green.append((fracs[i], c, c))
+            c = colors[i][2] / 255
+            blue.append((fracs[i], c, c))
+        cdict = {"red": red, "green": green, "blue": blue}
 
+        cmap = matplotlib.colors.LinearSegmentedColormap(
+            "testCmap", segmentdata=cdict, N=256
+        )
+        return cmap
 
-def _crop_and_zoom(im, left=0, right=0, top=0, bottom=0):
-    top, bottom = bottom, top
-    x, y = im.shape
-    im2 = im[bottom : x - top, left : y - right]
-    frac_x = (x - (top + bottom)) / x
-    frac_y = (y - (left + right)) / y
-    new_x = round(x * frac_x / frac_y)
-    return cv.resize(im2, (y, new_x))
+    def _crop_and_zoom(im, left=0, right=0, top=0, bottom=0):
+        top, bottom = bottom, top
+        x, y = im.shape
+        im2 = im[bottom : x - top, left : y - right]
+        frac_x = (x - (top + bottom)) / x
+        frac_y = (y - (left + right)) / y
+        new_x = round(x * frac_x / frac_y)
+        return cv.resize(im2, (y, new_x))
 
+    # AXIAL
+    def _axial(x, _s):
+        s = round((_s - (91 / 2)) * 192 / 91 + 192 / 2)
+        o = np.flip(np.rot90(x[:, :, s]), axis=1)
+        if _s == 60:
+            o = o[16:-20, :]
+        o = _crop_and_zoom(o, left=19, right=21, top=4, bottom=0)
+        return o
 
-# AXIAL
-def _axial(x, _s):
-    s = round((_s - (91 / 2)) * 192 / 91 + 192 / 2)
-    o = np.flip(np.rot90(x[:, :, s]), axis=1)
-    if _s == 60:
-        o = o[16:-20, :]
-    o = _crop_and_zoom(o, left=19, right=21, top=4, bottom=0)
-    return o
+    def _coronal(x, s):
+        s = round(s * 92 / 45 - 72 / 5)
+        o = np.rot90((x[:, -s, :]).T, k=2)[30:-22, :]
+        o = _crop_and_zoom(o, left=21, right=23, bottom=0, top=0)
+        return o
 
+    def _saggital(x, s):
+        s = round((s - (91 / 2)) * 192 / 91 * 0.98 + 192 / 2)
+        o = np.rot90(np.flip(x[s, :], axis=1), k=3)[30:-10, :]
+        return o
 
-def _coronal(x, s):
-    s = round(s * 92 / 45 - 72 / 5)
-    o = np.rot90((x[:, -s, :]).T, k=2)[30:-22, :]
-    o = _crop_and_zoom(o, left=21, right=23, bottom=0, top=0)
-    return o
+    def _imslices(x, article=False):
+        is_bool = x.dtype == bool
+        x = x.astype("float")
 
+        if article:
+            ax = [_axial(x, s) for s in [60, 40]]
+            co = [_coronal(x, s) for s in [50]]
+            sa = [_saggital(x, s) for s in [50]]
+        else:
+            ax = [_axial(x, s) for s in [60, 50, 40, 30]]
+            co = [_coronal(x, s) for s in [40, 50]]
+            sa = [_saggital(x, s) for s in [30, 50]]
+        out = np.concatenate(ax + co + sa, axis=0)
+        if is_bool:
+            return out > 0.2
+        return out
 
-def _saggital(x, s):
-    s = round((s - (91 / 2)) * 192 / 91 * 0.98 + 192 / 2)
-    o = np.rot90(np.flip(x[s, :], axis=1), k=3)[30:-10, :]
-    return o
-
-
-def _imslices(x, article=False):
-    is_bool = x.dtype == bool
-    x = x.astype("float")
-
-    if article:
-        ax = [_axial(x, s) for s in [60, 40]]
-        co = [_coronal(x, s) for s in [50]]
-        sa = [_saggital(x, s) for s in [50]]
-    else:
-        ax = [_axial(x, s) for s in [60, 50, 40, 30]]
-        co = [_coronal(x, s) for s in [40, 50]]
-        sa = [_saggital(x, s) for s in [30, 50]]
-    out = np.concatenate(ax + co + sa, axis=0)
-    if is_bool:
-        return out > 0.2
-    return out
-
-
-def _real_fake_compare_vis_metric2(real, fake, mri, mask, err, errmask):
     cmap = _get_cmap()
     article = True
     min_pet = 0
@@ -365,8 +362,7 @@ def _real_fake_compare_vis_metric2(real, fake, mri, mask, err, errmask):
 
     cb1.ax.tick_params(labelsize=tick_size)
     plt.gcf().add_axes(axins)
-
-    return plt.gcf()
+    plt.savefig(save_fname, dpi=300, bbox_inches="tight")
 
 
 def create_article_figure(
@@ -386,10 +382,14 @@ def create_article_figure(
     mask = _crop_mni_to_192((mask.unsqueeze(0)) > 0.5).type(torch.bool).squeeze()
 
     _real_fake_compare_vis_metric2(
-        real.numpy(), fake.numpy(), mr.numpy(), mask.numpy(), rd.numpy(), mask.numpy()
+        real.numpy(),
+        fake.numpy(),
+        mr.numpy(),
+        mask.numpy(),
+        rd.numpy(),
+        mask.numpy(),
+        save_fname,
     )
-
-    plt.savefig(save_fname, dpi=300, bbox_inches="tight")
 
 
 if __name__ == "__main__":
