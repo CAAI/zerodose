@@ -266,7 +266,7 @@ def test_syn_mni(runner, mri_mni_file, mask_mni_file, sbpet_outputfile) -> None:
 def test_syn_niftyreg(mri_aug_file, mask_aug_file, sbpet_outputfile) -> None:
     """Test the syn command."""
     mni_shape = (197, 233, 189)
-    start_shape = nib.load(mri_aug_file).get_fdata().shape
+    start_shape = nib.load(mri_aug_file).get_fdata().shape  # type: ignore
     assert start_shape != mni_shape
 
     synthesize_baselines(
@@ -276,7 +276,7 @@ def test_syn_niftyreg(mri_aug_file, mask_aug_file, sbpet_outputfile) -> None:
         device="cuda:0",
     )
 
-    assert nib.load(sbpet_outputfile).get_fdata().shape == start_shape
+    assert nib.load(sbpet_outputfile).get_fdata().shape == start_shape  # type: ignore
 
 
 @pytest.mark.slow

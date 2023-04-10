@@ -27,8 +27,8 @@ def save_nifty(data: torch.Tensor, filename_out: str, affine_ref: str) -> None:
         os.makedirs(save_directory)
 
     func = nib.load(affine_ref).affine  # type: ignore
-    data = data.squeeze().cpu().detach().numpy()
-    ni_img = nib.Nifti1Image(data, func)
+    data_npy = data.squeeze().cpu().detach().numpy()
+    ni_img = nib.Nifti1Image(data_npy, func)
     nib.save(ni_img, filename_out)
 
 
