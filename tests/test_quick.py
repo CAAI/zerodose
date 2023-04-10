@@ -139,7 +139,7 @@ def test_forward_pass(model_type) -> None:
 
 
 @pytest.mark.usefixtures("use_dummy_model")
-def test_syn(runner, mri_file, mask_file, sbpet_outputfile) -> None:
+def test_syn_no_output_fname(runner, mri_file, mask_file) -> None:
     """Test the syn command."""
     cmd = [
         "syn",
@@ -147,8 +147,6 @@ def test_syn(runner, mri_file, mask_file, sbpet_outputfile) -> None:
         mri_file,
         "-m",
         mask_file,
-        "-o",
-        sbpet_outputfile,
         "--device",
         "cpu",
     ]
@@ -159,7 +157,7 @@ def test_syn(runner, mri_file, mask_file, sbpet_outputfile) -> None:
 
 
 @pytest.mark.usefixtures("use_dummy_model")
-def test_syn_no_output_fname(runner, mri_file, mask_file) -> None:
+def test_syn(runner, mri_file, mask_file, sbpet_outputfile) -> None:
     """Test the syn command."""
     cmd = [
         "syn",
@@ -167,6 +165,8 @@ def test_syn_no_output_fname(runner, mri_file, mask_file) -> None:
         mri_file,
         "-m",
         mask_file,
+        "-o",
+        sbpet_outputfile,
         "--device",
         "cpu",
     ]
