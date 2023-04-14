@@ -20,19 +20,19 @@ Created by the department of [Clinically Applied Artificial Intelligence](http:/
 
 ## Installation
 
-Note that a python3 installation is required for _Zerodose_ to work.
-You can install _Zerodose_ via [pip] from [PyPI]:
+Note that a python3 installation is required for _ZeroDose_ to work.
+You can install _ZeroDose_ via [pip] from [PyPI]:
 
 ```console
 $ pip install zerodose
 ```
 
 ## Usage
-Note!: 
-- All input images should be affinely registered to [MNI 2009a Nonlinear Symmetric/Assymmetric](https://nist.mni.mcgill.ca/icbm-152-nonlinear-atlases-2009/) space (1×1x1mm). Use `zerodose pipeline` if ZeroDose should do the registration. 
-- A brain mask is required to run ZeroDose - we can recommend [HD-BET](https://github.com/MIC-DKFZ/HD-BET). 
+Note!
+- All input images should be affinely registered to [MNI 2009a Nonlinear Symmetric/Assymmetric](https://nist.mni.mcgill.ca/icbm-152-nonlinear-atlases-2009/) space (1×1x1mm). Use `zerodose pipeline` if _ZeroDose_ should do the registration. 
+- A brain mask is required to run _ZeroDose_ - we can recommend [HD-BET](https://github.com/MIC-DKFZ/HD-BET). 
 
-### Run zerodose
+### Run _ZeroDose_
 
 Create an sbPET and abnormality map:
 ```console
