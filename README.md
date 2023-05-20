@@ -28,29 +28,36 @@ $ pip install zerodose
 ```
 
 ## Usage
+
 Note!
-- All input images should be affinely registered to [MNI 2009a Nonlinear Symmetric/Assymmetric](https://nist.mni.mcgill.ca/icbm-152-nonlinear-atlases-2009/) space (1×1x1mm). Use `zerodose pipeline` if _ZeroDose_ should do the registration. 
-- A brain mask is required to run _ZeroDose_ - we can recommend [HD-BET](https://github.com/MIC-DKFZ/HD-BET). 
+
+- All input images should be affinely registered to [MNI 2009a Nonlinear Symmetric/Assymmetric](https://nist.mni.mcgill.ca/icbm-152-nonlinear-atlases-2009/) space (1×1x1mm). Use `zerodose pipeline` if _ZeroDose_ should do the registration.
+- A brain mask is required to run _ZeroDose_ - we can recommend [HD-BET](https://github.com/MIC-DKFZ/HD-BET).
 
 ### Run _ZeroDose_
 
 Create an sbPET and abnormality map:
+
 ```console
 $ zerodose run -i mr.nii.gz -p pet.nii.gz -m brain_mask.nii.gz -os sb_pet.nii.gz -oa abn.nii.gz
 ```
 
 ### Run pipeline
+
 Identical to `zerodose run` but with registration ([NiftyReg](http://cmictig.cs.ucl.ac.uk/wiki/index.php/NiftyReg)) to and from MNI space. (Registration may take several minutes depending on image dimensions)
+
 ```console
 $ zerodose pipeline -i mr.nii.gz -p pet.nii.gz -m brain_mask.nii.gz -os sb_pet.nii.gz -oa abn.nii.gz
 ```
 
 ### Run individual steps
+
 #### Synthesize raw baseline PET
 
 ```console
 $ zerodose syn -i mr.nii.gz -m brain_mask.nii.gz -o sb_pet_raw.nii.gz
 ```
+
 #### Intensity normalize raw sbPET
 
 ```console
@@ -70,6 +77,7 @@ Please see the [Command-line Reference] for details.
 - TODO
 
 ## Hardware requirements
+
 - TODO
 
 ## Issues and contributing
