@@ -1,6 +1,7 @@
 """Utility functions."""
 import math
 import os
+import re
 import shutil
 import tempfile
 from typing import List
@@ -9,14 +10,52 @@ from typing import Tuple
 from typing import Union
 from urllib.request import urlopen
 
-import nibabel as nib
+import nibabel as nib  # type: ignore
 import torch
 import torch.nn as nn
 from torch.nn import functional
 
-from zerodose.model import ZeroDose
+from zerodose.models import ZeroDose
 from zerodose.paths import folder_with_parameter_files
 from zerodose.paths import folder_with_templates
+
+
+def save_nifty(data: torch.Tensor, filename_out: str, affine_ref: str) -> None:
+    """Saves a nifty file."""
+    save_directory = os.path.dirname(filename_out)
+    if not os.path.exists(save_directory):
+        os.makedirs(save_directory)
+
+    func = nib.load(affine_ref).affine  # type: ignore
+    data_npy = data.squeeze().cpu().detach().numpy()
+    ni_img = nib.Nifti1Image(data_npy, func)
+    nib.save(ni_img, filename_out)
+
+
+def load_nifty(fname: str) -> torch.Tensor:
+    """Loads a nifty file and returns it as a torch tensor."""
+    return torch.from_numpy(nib.load(fname).get_fdata()).float()  # type: ignore
+
+
+def get_mni_template(img="mr") -> str:
+    """Returns the path to the t1 MNI template. If missing, downloads the template."""
+    if os.environ.get("GITHUB_ACTIONS"):
+        raise Exception(
+            """MNI templates should not be downloaded
+            when running GitHub Actions"""
+        )
+    else:
+        _maybe_download_mni_template()
+        return _get_mni_template_fname(img=img)
+
+
+def binarize(img_path, out_path, threshold=0.5):
+    """Binarize an image."""
+    img = nib.load(img_path)
+    data = img.get_fdata()
+    data[data > threshold] = 1
+    img = nib.Nifti1Image(data, img.affine, img.header)
+    nib.save(img, out_path)
 
 
 def _get_model_fname() -> str:
@@ -24,8 +63,11 @@ def _get_model_fname() -> str:
     return os.path.join(folder_with_parameter_files, "model_1.pt")
 
 
-def _get_mni_template_fname():
-    return os.path.join(folder_with_templates, "t1.nii")
+def _get_mni_template_fname(img="mr"):
+    if img == "mr":
+        return os.path.join(folder_with_templates, "t1.nii")
+    elif img == "mask":
+        return os.path.join(folder_with_templates, "mask.nii")
 
 
 def _download_file(url: str, filename: str) -> None:
@@ -61,18 +103,20 @@ def _maybe_download_parameters(
 def _maybe_download_mni_template(
     force_overwrite: bool = False, verbose: bool = True
 ) -> None:
-
     if not os.path.isdir(folder_with_templates):
         _maybe_mkdir_p(folder_with_templates)
 
-    out_filename = _get_mni_template_fname()
+    out_mri = _get_mni_template_fname(img="mr")
+    out_mask = _get_mni_template_fname(img="mask")
 
-    if force_overwrite and os.path.isfile(out_filename):
-        os.remove(out_filename)
+    if force_overwrite and os.path.isfile(out_mri):
+        os.remove(out_mri)
 
-    if not os.path.isfile(out_filename):
+    if force_overwrite and os.path.isfile(out_mri):
+        os.remove(out_mask)
+
+    if not os.path.isfile(out_mri) or not os.path.isfile(out_mask):
         with tempfile.TemporaryDirectory() as tempdirname:
-
             url = (
                 "https://www.bic.mni.mcgill.ca/~vfonov/icbm/"
                 "2009/mni_icbm152_nlin_sym_09a_nifti.zip"
@@ -89,7 +133,13 @@ def _maybe_download_mni_template(
                 "mni_icbm152_nlin_sym_09a",
                 "mni_icbm152_t1_tal_nlin_sym_09a.nii",
             )
-            shutil.copy(t1, out_filename)
+            mask = os.path.join(
+                tempdirname,
+                "mni_icbm152_nlin_sym_09a",
+                "mni_icbm152_t1_tal_nlin_sym_09a_mask.nii",
+            )
+            shutil.copy(t1, out_mri)
+            shutil.copy(mask, out_mask)
 
 
 def _maybe_mkdir_p(directory: str) -> None:
@@ -174,35 +224,6 @@ def get_gaussian_weight(
     return weight.unsqueeze(0).unsqueeze(0)
 
 
-def save_nifty(data: torch.Tensor, filename_out: str, affine_ref: str) -> None:
-    """Saves a nifty file."""
-    save_directory = os.path.dirname(filename_out)
-    if not os.path.exists(save_directory):
-        os.makedirs(save_directory)
-
-    func = nib.load(affine_ref).affine
-    data = data.squeeze().cpu().detach().numpy()
-    ni_img = nib.Nifti1Image(data, func)
-    nib.save(ni_img, filename_out)
-
-
-def load_nifty(fname: str) -> torch.Tensor:
-    """Loads a nifty file and returns it as a torch tensor."""
-    return torch.from_numpy(nib.load(fname).get_fdata()).float()
-
-
-def get_mni_template() -> str:
-    """Returns the path to the t1 MNI template. If missing, downloads the template."""
-    if os.environ.get("GITHUB_ACTIONS"):
-        raise Exception(
-            """MNI templates may not be downloaded by
-            pytests that do not have a 'slow' marker"""
-        )
-    else:
-        _maybe_download_mni_template()
-        return _get_mni_template_fname()
-
-
 def get_model(
     model_type: Literal["standard", "dummy", "determine"] = "determine"
 ) -> ZeroDose:
@@ -224,3 +245,14 @@ def get_model(
         return model
     else:
         raise ValueError(f"Unknown model type '{model_type!r}'.")
+
+
+def _create_output_fname(mri_fname, suffix="_sb", file_type=".nii.gz"):
+    """Create output filename from input filename."""
+    out_fname = mri_fname
+    if out_fname.endswith(".nii.gz"):
+        out_fname = re.sub(".nii.gz$", "", out_fname)
+    if out_fname.endswith(".nii"):
+        out_fname = re.sub(".nii$", "", out_fname)
+    out_fname += suffix + file_type
+    return out_fname
