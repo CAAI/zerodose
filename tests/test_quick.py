@@ -126,8 +126,6 @@ def test_main_help_succeeds(runner) -> None:
 
 
 # Tests
-
-
 @pytest.mark.parametrize("model_type", ["standard", "dummy"])
 def test_forward_pass(model_type) -> None:
     """Test the initialize_model command."""
@@ -151,8 +149,7 @@ def test_syn_no_output_fname(runner, mri_file, mask_file) -> None:
         "cpu",
     ]
 
-    result = runner.invoke(__main__.main, cmd)
-
+    result = runner.invoke(__main__.main, cmd, catch_exceptions=False)
     assert result.exit_code == 0
 
 
