@@ -51,6 +51,7 @@ $ zerodose pipeline -i mr.nii.gz -p pet.nii.gz -m brain_mask.nii.gz -os sb_pet.n
 ```
 
 ### Run individual steps
+![Alt text](resources/imgs/workflow_overview.png)
 
 #### Synthesize raw baseline PET
 
