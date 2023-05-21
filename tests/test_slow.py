@@ -338,6 +338,7 @@ def test_pipeline(
     )
 
 
+@pytest.mark.slow
 def test_run_cli(
     runner, mri_mni_file, mask_mni_file, sbpet_outputfile, abn_outputfile, pet_mni_file
 ) -> None:
