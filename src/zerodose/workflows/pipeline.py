@@ -3,13 +3,13 @@
 import os
 import tempfile
 
-from zerodose.pipeline.main import run
-from zerodose.pipeline.niftyreg import from_mni
-from zerodose.pipeline.niftyreg import to_mni
 from zerodose.visualizations import create_article_figure
+from zerodose.workflows.registration import from_mni
+from zerodose.workflows.registration import to_mni
+from zerodose.workflows.run import run
 
 
-def run_with_registration(  # noqa: C901
+def pipeline(  # noqa: C901
     mri_fname,
     mask_fname,
     pet_fname,

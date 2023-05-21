@@ -9,8 +9,9 @@ import pytest
 from nibabel.processing import resample_from_to
 
 from zerodose import __main__
-from zerodose.pipeline import run_with_registration
-from zerodose.pipeline import synthesize_baselines
+from zerodose.workflows import pipeline
+from zerodose.workflows import run
+from zerodose.workflows import synthesize_baselines
 
 
 def _download_file(url: str, filename: str) -> None:
@@ -284,7 +285,7 @@ def test_run(
     pet_mni_file, mask_mni_file, mri_mni_file, sbpet_outputfile, abn_outputfile
 ):
     """Test the run command with the standard model and MNI files."""
-    run_with_registration(
+    run(
         mri_fname=mri_mni_file,
         mask_fname=mask_mni_file,
         out_sbpet=sbpet_outputfile,
@@ -302,7 +303,7 @@ def test_run_register(
     pet_aug_file, mask_aug_file, mri_aug_file, sbpet_outputfile, abn_outputfile
 ):
     """Test the run command with the standard model and MNI files."""
-    run_with_registration(
+    run(
         mri_fname=mri_aug_file,
         mask_fname=mask_aug_file,
         out_sbpet=sbpet_outputfile,
@@ -315,7 +316,7 @@ def test_run_register(
 
 
 @pytest.mark.slow
-def test_run_no_pet(
+def test_pipeline(
     mask_aug_file,
     mri_aug_file,
     sbpet_outputfile,
@@ -324,7 +325,7 @@ def test_run_no_pet(
     pet_aug_rigid_file,
 ):
     """Test the run command with the standard model and MNI files."""
-    run_with_registration(
+    pipeline(
         mri_fname=mri_aug_file,
         mask_fname=mask_aug_file,
         out_sbpet=sbpet_outputfile,
@@ -345,7 +346,7 @@ def test_run_cli(
     result = runner.invoke(
         __main__.main,
         [
-            "pipeline",
+            "run",
             "-i",
             mri_mni_file,
             "-m",
