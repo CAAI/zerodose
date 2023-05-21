@@ -6,10 +6,10 @@ import pytest
 import torch
 
 from zerodose import __main__
-from zerodose.pipeline import create_abnormality_maps
-from zerodose.pipeline import normalize_to_pet
-from zerodose.pipeline import synthesize_baselines
 from zerodose.utils import get_model
+from zerodose.workflows import create_abnormality_maps
+from zerodose.workflows import normalize_to_pet
+from zerodose.workflows import synthesize_baselines
 
 
 def _create_random_image(seed, shape=(197, 233, 189)) -> nib.Nifti1Image:

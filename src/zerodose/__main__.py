@@ -4,11 +4,11 @@ from typing import Union
 
 import click
 
-from zerodose.pipeline import create_abnormality_maps
-from zerodose.pipeline import normalize_to_pet
-from zerodose.pipeline import run_with_registration
-from zerodose.pipeline import synthesize_baselines
 from zerodose.utils import _create_output_fname
+from zerodose.workflows import create_abnormality_maps
+from zerodose.workflows import normalize_to_pet
+from zerodose.workflows import pipeline
+from zerodose.workflows import synthesize_baselines
 
 
 @click.group()
@@ -329,7 +329,7 @@ no_reg_pet_to_mr_option = click.option(
 @device_option
 @outputspace_option
 @main.command()
-def pipeline(
+def _pipeline(
     mri_fname,
     mask_fname,
     pet_fname,
@@ -355,7 +355,7 @@ def pipeline(
             pet_fname, suffix="_abn_figure", file_type=".png"
         )
 
-    run_with_registration(
+    pipeline(
         mri_fname=mri_fname,
         mask_fname=mask_fname,
         out_sbpet=out_sbpet,
