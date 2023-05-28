@@ -7,7 +7,7 @@ import click
 from zerodose.utils import _create_output_fname
 from zerodose.workflows import create_abnormality_maps
 from zerodose.workflows import normalize_to_pet
-from zerodose.workflows import pipeline
+from zerodose.workflows import pipeline as pipeline_
 from zerodose.workflows import synthesize_baselines
 
 
@@ -329,7 +329,7 @@ no_reg_pet_to_mr_option = click.option(
 @device_option
 @outputspace_option
 @main.command()
-def _pipeline(
+def pipeline(
     mri_fname,
     mask_fname,
     pet_fname,
@@ -355,7 +355,7 @@ def _pipeline(
             pet_fname, suffix="_abn_figure", file_type=".png"
         )
 
-    pipeline(
+    pipeline_(
         mri_fname=mri_fname,
         mask_fname=mask_fname,
         out_sbpet=out_sbpet,

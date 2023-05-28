@@ -11,7 +11,9 @@ from nibabel.processing import resample_from_to
 from zerodose import __main__
 from zerodose.workflows import pipeline
 from zerodose.workflows import run
-from zerodose.workflows import synthesize_baselines
+
+
+# from zerodose.workflows import synthesize_baselines
 
 
 def _download_file(url: str, filename: str) -> None:
@@ -262,19 +264,26 @@ def test_syn_mni(runner, mri_mni_file, mask_mni_file, sbpet_outputfile) -> None:
     assert result.exit_code == 0
 
 
-@pytest.mark.slow
 @pytest.mark.usefixtures("use_dummy_model")
-def test_syn_niftyreg(mri_aug_file, mask_aug_file, sbpet_outputfile) -> None:
+def test_pipeline_fun(
+    mri_mni_file,
+    mask_mni_file,
+    sbpet_outputfile,
+    pet_mni_file,
+    png_outputfile,
+    abn_outputfile,
+) -> None:
     """Test the syn command."""
-    mni_shape = (197, 233, 189)
-    start_shape = nib.load(mri_aug_file).get_fdata().shape  # type: ignore
-    assert start_shape != mni_shape
+    start_shape = nib.load(mri_mni_file).get_fdata().shape  # type: ignore
 
-    synthesize_baselines(
-        mri_aug_file,
-        mask_aug_file,
+    pipeline(
+        mri_mni_file,
+        mask_mni_file,
+        pet_mni_file,
         sbpet_outputfile,
-        device="cuda:0",
+        out_img=png_outputfile,
+        out_abn=abn_outputfile,
+        device="cpu",
     )
 
     assert nib.load(sbpet_outputfile).get_fdata().shape == start_shape  # type: ignore
